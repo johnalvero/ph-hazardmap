@@ -13,7 +13,7 @@ export function Header() {
         <div className="flex items-center gap-3">
           <Mountain className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">GeoSafe Map</h1>
+            <h1 className="text-xl font-bold text-foreground">PH Hazard Map</h1>
             <p className="text-xs text-muted-foreground hidden sm:block">
               Real-time hazard monitoring for safer communities
             </p>
@@ -35,9 +35,9 @@ export function Header() {
       {showInfo && (
         <div className="mt-4 p-4 bg-muted rounded-lg text-sm space-y-3">
           <div>
-            <h3 className="font-semibold mb-2">About GeoSafe Map</h3>
+            <h3 className="font-semibold mb-2">About PH Hazard Map</h3>
             <p className="text-muted-foreground mb-2">
-              GeoSafe Map provides real-time visualization of natural hazards including earthquakes and volcanic activity.
+              PH Hazard Map provides real-time visualization of natural hazards including earthquakes and volcanic activity.
             </p>
           </div>
           

@@ -11,7 +11,7 @@ export function LoadingScreen() {
     <div className="flex items-center justify-center h-screen bg-background">
       <div className="text-center space-y-4">
         <LoadingSpinner />
-        <p className="text-muted-foreground">Loading GeoSafe Map...</p>
+        <p className="text-muted-foreground">Loading PH Hazard Map...</p>
       </div>
     </div>
   )

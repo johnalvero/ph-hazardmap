@@ -1,6 +1,6 @@
 {
-  "name": "GeoSafe Map - Real-time Hazard Monitoring",
-  "short_name": "GeoSafe Map",
+  "name": "PH Hazard Map - Real-time Hazard Monitoring",
+  "short_name": "PH Hazard Map",
   "description": "All hazards. One map. Real-time awareness for safer communities.",
   "start_url": "/",
   "display": "standalone",
