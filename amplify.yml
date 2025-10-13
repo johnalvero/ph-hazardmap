@@ -13,11 +13,21 @@ frontend:
         - echo "S3_REGION=$S3_REGION"
         - echo "AWS_REGION=$AWS_REGION"
         - echo "NODE_ENV=$NODE_ENV"
+        - echo "Creating .env.production file..."
+#        - echo "NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=$NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN" > .env.production
+        - echo "S3_BUCKET_NAME=$S3_BUCKET_NAME" >> .env.production
+        - echo "S3_REGION=$S3_REGION" >> .env.production
+        - echo "AWS_REGION=$AWS_REGION" >> .env.production
+#        - echo "NODE_ENV=production" >> .env.production
+        - echo "Created .env.production with environment variables"
+        - echo "Verifying .env.production file contents:"
+        - sed 's/=.*/=***HIDDEN***/' .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
     files:
       - '**/*'
+      - '.env.production'
   cache:
     paths:
       - node_modules/**/*
