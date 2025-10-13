@@ -158,7 +158,7 @@ jobs:
           echo "🏥 Performing health check..."
           
           # Check if the main application is accessible
-          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}" || echo "000")
+          response=$(curl -s -w "\n%{http_code}" "https://ph-hazard.zedxperts.com" || echo "000")
           http_code=$(echo "$response" | tail -n1)
           
           if [ "$http_code" -eq 200 ]; then
