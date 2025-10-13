@@ -1,15 +1,28 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime'
 
-// Create Bedrock client using existing S3 credentials (works with local and Amplify)
+// Create Bedrock client - use environment variables if available, otherwise use compute role
 const createBedrockClient = () => {
   try {
-    const client = new BedrockRuntimeClient({
-      region: process.env.S3_REGION || 'us-east-1',
-      credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
-        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+    const config: {
+      region: string
+      credentials?: {
+        accessKeyId: string
+        secretAccessKey: string
       }
-    })
+    } = {
+      region: process.env.S3_REGION || process.env.AWS_REGION || 'us-east-1',
+    }
+
+    // Only set credentials if environment variables are available
+    // Otherwise, let AWS SDK use the compute role (for Amplify)
+    if (process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY) {
+      config.credentials = {
+        accessKeyId: process.env.S3_ACCESS_KEY_ID,
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+      }
+    }
+
+    const client = new BedrockRuntimeClient(config)
     return client
   } catch (error) {
     throw error
