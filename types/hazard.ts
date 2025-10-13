@@ -17,6 +17,13 @@ export interface Earthquake {
   mmi?: number
 }
 
+export interface AIInsight {
+  summary: string
+  riskAssessment: string
+  recommendations: string[]
+  keyPoints: string[]
+}
+
 export interface Volcano {
   id: string
   type: 'volcano'
@@ -34,6 +41,7 @@ export interface Volcano {
   reminder?: string // "Reminder" recommendations
   bulletinUrl?: string // Link to original bulletin
   bulletinDate?: string // Date of the bulletin
+  aiInsight?: AIInsight // AI-generated insight for citizens
 }
 
 export type HazardEvent = Earthquake | Volcano

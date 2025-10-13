@@ -5,6 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { X, ExternalLink, MapPin, Activity, Calendar, Layers } from 'lucide-react'
 import { formatDate, formatDistance, formatMagnitude, getAlertLevelColor } from '@/lib/utils'
 
@@ -158,54 +164,87 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
             </>
           ) : (
             <>
-              {/* Volcano Details */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <Activity className="h-4 w-4 mt-1 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Status</p>
-                    <Badge variant={getStatusColor(event.status)} className="mt-1">
-                      {event.status.toUpperCase()}
-                    </Badge>
+              {/* Volcano Details - Two Column Layout with Tooltips */}
+              <TooltipProvider>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Left Column */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-help">
+                            <Activity className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Status</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Badge variant={getStatusColor(event.status)}>
+                        {event.status.toUpperCase()}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-help">
+                            <Layers className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Elevation</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <p className="text-sm text-muted-foreground">
+                        {event.elevation.toLocaleString()} m
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Column */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-help">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Location</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground">
+                          {event.country}
+                        </p>
+                        <p className="text-sm text-muted-foreground font-mono">
+                          {event.coordinates[1].toFixed(4)}°, {event.coordinates[0].toFixed(4)}°
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-help">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Last Update</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(event.lastUpdate)}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              </TooltipProvider>
 
-
-                <div className="flex items-start gap-2">
-                  <Layers className="h-4 w-4 mt-1 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Elevation</p>
-                    <p className="text-sm text-muted-foreground">
-                      {event.elevation.toLocaleString()} m
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 mt-1 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Location</p>
-                    <p className="text-sm text-muted-foreground">
-                      {event.country}
-                    </p>
-                    <p className="text-sm text-muted-foreground font-mono">
-                      {event.coordinates[1].toFixed(4)}°, {event.coordinates[0].toFixed(4)}°
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <Calendar className="h-4 w-4 mt-1 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Last Update</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(event.lastUpdate)}
-                    </p>
-                  </div>
-                </div>
-
-
-                {/* Parameters Section */}
+              {/* Parameters Section */}
                 {event.parameters && Object.keys(event.parameters).length > 0 && (
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
@@ -285,7 +324,74 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                     View PHIVOLCS Bulletin
                   </Button>
                 )}
-              </div>
+
+                {/* AI Insight Section */}
+                {event.aiInsight && (
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse"></div>
+                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                        AI Insight
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {/* Summary */}
+                      <div>
+                        <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                          Summary
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
+                          {event.aiInsight.summary}
+                        </p>
+                      </div>
+
+                      {/* Risk Assessment */}
+                      <div>
+                        <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                          Risk Assessment
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 leading-relaxed">
+                          {event.aiInsight.riskAssessment}
+                        </p>
+                      </div>
+
+                      {/* Key Points */}
+                      {event.aiInsight.keyPoints && event.aiInsight.keyPoints.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">
+                            Key Points
+                          </p>
+                          <ul className="space-y-1">
+                            {event.aiInsight.keyPoints.map((point, index) => (
+                              <li key={index} className="flex items-start text-xs text-blue-600 dark:text-blue-400">
+                                <span className="text-blue-500 mr-2 mt-0.5">•</span>
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Recommendations */}
+                      {event.aiInsight.recommendations && event.aiInsight.recommendations.length > 0 && (
+                        <div>
+                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">
+                            Recommendations
+                          </p>
+                          <ul className="space-y-1">
+                            {event.aiInsight.recommendations.map((recommendation, index) => (
+                              <li key={index} className="flex items-start text-xs text-blue-600 dark:text-blue-400">
+                                <span className="text-blue-500 mr-2 mt-0.5">•</span>
+                                <span>{recommendation}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
             </>
           )}
 

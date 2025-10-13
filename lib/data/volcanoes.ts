@@ -190,8 +190,29 @@ async function scrapeBulletinDetails(bulletinUrl: string): Promise<Partial<Volca
     }
 
     // Extract bulletin date
-    const bulletinDate = $('.txt-date').first().text().trim() || new Date().toISOString()
-    console.log(`📅 Bulletin Date: ${bulletinDate}`)
+    const rawBulletinDate = $('.txt-date').first().text().trim()
+    let bulletinDate = new Date().toISOString() // fallback to current time
+    
+    if (rawBulletinDate) {
+      try {
+        // Try to parse the date - PHIVOLCS might use various formats
+        const parsedDate = new Date(rawBulletinDate)
+        if (!isNaN(parsedDate.getTime())) {
+          bulletinDate = parsedDate.toISOString()
+        } else {
+          // If direct parsing fails, try common PHIVOLCS date formats
+          // Example: "October 13, 2025" or "13 October 2025"
+          const fallbackDate = new Date(rawBulletinDate.replace(/(\d{1,2})\s+(\w+)\s+(\d{4})/, '$2 $1, $3'))
+          if (!isNaN(fallbackDate.getTime())) {
+            bulletinDate = fallbackDate.toISOString()
+          }
+        }
+      } catch {
+        console.warn(`⚠️ Could not parse bulletin date: ${rawBulletinDate}`)
+      }
+    }
+    
+    console.log(`📅 Bulletin Date: ${rawBulletinDate} -> ${bulletinDate}`)
 
     // Extract parameters from the table (exclude recommendations sections)
     const parameters: { [key: string]: string | number } = {}
@@ -286,7 +307,7 @@ async function scrapeBulletinDetails(bulletinUrl: string): Promise<Partial<Volca
       elevation: getVolcanoElevation(volcanoNameTitleCase),
       status,
       activityLevel,
-      lastUpdate: new Date().toISOString(),
+      lastUpdate: bulletinDate,
       description: `Alert Level ${activityLevel} - ${status}`,
       country: 'Philippines',
       parameters: Object.keys(parameters).length > 0 ? parameters : undefined,

@@ -2,19 +2,17 @@ import { NextResponse } from 'next/server'
 import { scrapePhivolcsBulletins } from '@/lib/data/volcanoes'
 import { setVolcanoesInCache } from '@/lib/storage/cache'
 import { saveVolcanoDataToS3, isS3Configured } from '@/lib/storage/s3'
+import { generateVolcanoInsight, isBedrockConfigured } from '@/lib/services/bedrock'
 
 // Force this route to be dynamic
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    console.log('🚀 Starting volcano data scraping...')
-    
     // Scrape volcano data from PHIVOLCS
     const volcanoes = await scrapePhivolcsBulletins()
-    
+
     if (volcanoes.length === 0) {
-      console.log('📭 No volcano data found')
       return NextResponse.json({
         success: false,
         message: 'No volcano data found',
@@ -23,74 +21,67 @@ export async function GET() {
       })
     }
 
-    // Log the scraped data for debugging
-    console.log('🌋 SCRAPED VOLCANO DATA:')
-    console.log('=====================================')
-    volcanoes.forEach((volcano, index) => {
-      console.log(`\n${index + 1}. ${volcano.name}`)
-      console.log(`   Status: ${volcano.status} (Level ${volcano.activityLevel})`)
-      console.log(`   Location: ${volcano.location}`)
-      console.log(`   Coordinates: [${volcano.coordinates[0]}, ${volcano.coordinates[1]}]`)
-      console.log(`   Elevation: ${volcano.elevation}m`)
-      console.log(`   Last Update: ${volcano.lastUpdate}`)
-      console.log(`   Description: ${volcano.description || 'N/A'}`)
+    // Generate AI insights for each volcano if Bedrock is configured
+    const bedrockConfigured = isBedrockConfigured()
+    
+    if (bedrockConfigured) {
+      // Create a new array with AI insights
+      const volcanoesWithInsights = []
       
-      if (volcano.parameters && Object.keys(volcano.parameters).length > 0) {
-        console.log(`   Parameters:`)
-        Object.entries(volcano.parameters).forEach(([key, value]) => {
-          console.log(`     - ${key}: ${value}`)
-        })
+      for (let i = 0; i < volcanoes.length; i++) {
+        const volcano = volcanoes[i]
+        
+        try {
+          const aiInsight = await generateVolcanoInsight(volcano)
+          
+          if (aiInsight) {
+            const volcanoWithInsight = { ...volcano, aiInsight }
+            volcanoesWithInsights.push(volcanoWithInsight)
+          } else {
+            volcanoesWithInsights.push(volcano)
+          }
+        } catch {
+          volcanoesWithInsights.push(volcano)
+          // Continue with other volcanoes even if one fails
+        }
+        
+        // Add a longer delay to avoid rate limiting (10 seconds)
+        if (i < volcanoes.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 10000))
+        }
       }
       
-      if (volcano.shouldNotBeAllowed) {
-        console.log(`   Should Not Be Allowed: ${volcano.shouldNotBeAllowed}`)
-      }
-      
-      if (volcano.reminder) {
-        console.log(`   Reminder: ${volcano.reminder}`)
-      }
-      
-      if (volcano.bulletinUrl) {
-        console.log(`   Bulletin URL: ${volcano.bulletinUrl}`)
-      }
-      
-      if (volcano.bulletinDate) {
-        console.log(`   Bulletin Date: ${volcano.bulletinDate}`)
-      }
-    })
-    console.log('=====================================')
+      // Replace the original volcanoes array with the one that has AI insights
+      volcanoes.length = 0
+      volcanoes.push(...volcanoesWithInsights)
+    }
     
     // Save to S3 if configured
     if (isS3Configured()) {
       try {
         await saveVolcanoDataToS3(volcanoes)
-        console.log('☁️ Volcano data saved to S3')
-      } catch (error) {
-        console.error('❌ Error saving to S3:', error)
+      } catch {
         // Continue even if S3 fails
       }
-    } else {
-      console.log('⚠️ S3 not configured, skipping S3 save')
     }
-    
+
     // Update in-memory cache
     setVolcanoesInCache(volcanoes)
-    
-    console.log(`✅ Scraping completed: ${volcanoes.length} volcanoes processed`)
+
+    const responseVolcanoesWithInsights = volcanoes.filter(v => v.aiInsight).length
 
     return NextResponse.json({
       success: true,
       message: 'Volcano data scraped successfully',
       count: volcanoes.length,
+      aiInsightsGenerated: responseVolcanoesWithInsights,
       timestamp: new Date().toISOString(),
       source: 'PHIVOLCS WOVODAT',
       storage: isS3Configured() ? 'AWS S3 + In-memory cache' : 'In-memory cache only',
-      data: volcanoes // Include data in response for debugging
+      aiService: isBedrockConfigured() ? 'AWS Bedrock (Claude 3 Haiku)' : 'Not configured',
     })
 
   } catch (error) {
-    console.error('❌ Error in volcano scraping endpoint:', error)
-    
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
