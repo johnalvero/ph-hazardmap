@@ -1,17 +1,50 @@
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import { Volcano } from '@/types/hazard'
 
-// Initialize S3 client with default credential chain
-// This will automatically check for:
-// 1. IAM roles (Amplify compute role)
-// 2. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-// 3. Credential files (~/.aws/credentials)
-const s3Client = new S3Client({
-  region: process.env.PH_HAZARD_S3_REGION || process.env.AWS_REGION || 'ap-southeast-1'
-  // No explicit credentials - uses default credential chain
-})
+// Initialize S3 client with conditional credential configuration
+// For local development: Use explicit credentials if available
+// For production (Amplify): Use default credential chain (IAM role)
+const createS3Client = () => {
+  const region = process.env.PH_HAZARD_S3_REGION || process.env.AWS_REGION || process.env.S3_REGION || 'ap-southeast-1'
+  
+  // Check if we have explicit credentials (for local development)
+  // Support multiple credential formats: PH_HAZARD_S3_*, AWS_*, and S3_*
+  const hasExplicitCredentials = !!(
+    (process.env.PH_HAZARD_S3_ACCESS_KEY_ID && process.env.PH_HAZARD_S3_SECRET_ACCESS_KEY) ||
+    (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
+    (process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY)
+  )
+  
+  if (hasExplicitCredentials) {
+    console.log('🔑 Using explicit S3 credentials for local development')
+    
+    // Use credentials in priority order: PH_HAZARD_S3_* > AWS_* > S3_*
+    const accessKeyId = process.env.PH_HAZARD_S3_ACCESS_KEY_ID || 
+                       process.env.AWS_ACCESS_KEY_ID || 
+                       process.env.S3_ACCESS_KEY_ID!
+    const secretAccessKey = process.env.PH_HAZARD_S3_SECRET_ACCESS_KEY || 
+                           process.env.AWS_SECRET_ACCESS_KEY || 
+                           process.env.S3_SECRET_ACCESS_KEY!
+    
+    return new S3Client({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey
+      }
+    })
+  } else {
+    console.log('🏷️ Using default credential chain (IAM role for Amplify)')
+    return new S3Client({
+      region
+      // No explicit credentials - uses default credential chain
+    })
+  }
+}
 
-const BUCKET_NAME = process.env.PH_HAZARD_S3_BUCKET_NAME || process.env.S3_BUCKET_NAME
+const s3Client = createS3Client()
+
+const BUCKET_NAME = process.env.PH_HAZARD_S3_BUCKET_NAME || process.env.S3_BUCKET_NAME || process.env.AWS_S3_BUCKET_NAME
 const OBJECT_KEY = 'volcano-data/latest.json'
 
 interface VolcanoData {
@@ -120,11 +153,7 @@ export async function getVolcanoDataFromS3(): Promise<VolcanoData | null> {
 
 /**
  * Check if S3 is configured for use
- * In Amplify, this will return true if:
- * 1. IAM role is attached (Amplify compute role)
- * 2. Environment variables are set
- * 3. Credential files are available
- * We only need to check for bucket name and region
+ * Returns true if we have the necessary configuration for S3 access
  */
 export function isS3Configured(): boolean {
   // Check if bucket name is configured
@@ -137,7 +166,22 @@ export function isS3Configured(): boolean {
     process.env.S3_REGION
   )
   
-  // For Amplify deployment, we only need bucket name and region
-  // Credentials will be provided by the compute role
-  return bucketConfigured && regionConfigured
+  // Check if we have credentials (either explicit or via IAM role)
+  const hasExplicitCredentials = !!(
+    (process.env.PH_HAZARD_S3_ACCESS_KEY_ID && process.env.PH_HAZARD_S3_SECRET_ACCESS_KEY) ||
+    (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
+    (process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY)
+  )
+  
+  // For local development: need explicit credentials
+  // For Amplify deployment: IAM role provides credentials automatically
+  const isLocalDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+  
+  if (isLocalDevelopment) {
+    // In local development, we need explicit credentials
+    return bucketConfigured && regionConfigured && hasExplicitCredentials
+  } else {
+    // In production (Amplify), IAM role provides credentials
+    return bucketConfigured && regionConfigured
+  }
 }
