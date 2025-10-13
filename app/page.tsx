@@ -12,6 +12,7 @@ import { HazardEvent, FilterState } from '@/types/hazard'
 export default function Home() {
   const [selectedEvent, setSelectedEvent] = useState<HazardEvent | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [isLegendCollapsed, setIsLegendCollapsed] = useState(true)
   const [filters, setFilters] = useState<FilterState>({
     hazardTypes: ['earthquake', 'volcano'],
     dateRange: {
@@ -22,8 +23,6 @@ export default function Home() {
       min: 0,
       max: 10
     },
-    showPopulation: false,
-    showAdminBoundaries: false,
     showMajorFaults: true,
     showMinorFaults: false
   })
@@ -67,7 +66,10 @@ export default function Home() {
 
         {/* Map Legend - Bottom Right */}
         <div className="absolute bottom-4 right-4 z-10 hidden md:block">
-          <MapLegend />
+          <MapLegend 
+            isCollapsed={isLegendCollapsed}
+            onToggle={() => setIsLegendCollapsed(!isLegendCollapsed)}
+          />
         </div>
       </div>
     </div>

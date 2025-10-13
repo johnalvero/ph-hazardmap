@@ -29,6 +29,11 @@ export interface Volcano {
   lastUpdate: string
   description?: string
   country: string
+  parameters?: { [key: string]: string | number } // Dynamic parameters from bulletin
+  shouldNotBeAllowed?: string // "Should not be allowed" recommendations
+  reminder?: string // "Reminder" recommendations
+  bulletinUrl?: string // Link to original bulletin
+  bulletinDate?: string // Date of the bulletin
 }
 
 export type HazardEvent = Earthquake | Volcano
@@ -43,8 +48,6 @@ export interface FilterState {
     min: number
     max: number
   }
-  showPopulation: boolean
-  showAdminBoundaries: boolean
   showMajorFaults: boolean
   showMinorFaults: boolean
 }

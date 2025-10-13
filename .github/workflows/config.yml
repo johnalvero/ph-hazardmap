@@ -1,0 +1,51 @@
+# GitHub Actions Configuration for PH Hazard Map
+# Update these URLs to match your actual Amplify app URLs
+
+environments:
+  production:
+    url: "http://ph-hazard.zedxperts.com"
+    description: "Production environment"
+    
+#  staging:
+#    url: "https://ph-hazard.zedxperts.com"
+#    description: "Staging environment"
+    
+#  development:
+#    url: "https://ph-hazard.zedxperts.com"
+#    description: "Development environment"
+
+# Scraping configuration
+scraping:
+  # How often to scrape (in minutes)
+  interval: 5
+  
+  # Maximum age of data before considering it stale (in minutes)
+  max_age: 30
+  
+  # Timeout for scraping requests (in seconds)
+  timeout: 300
+  
+  # User agent for scraping requests
+  user_agent: "Mozilla/5.0 (iPad15,3; CPU OS 18_3_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Resorts/4.7.5"
+
+# Monitoring configuration
+monitoring:
+  # How often to check data freshness (in minutes)
+  check_interval: 10
+  
+  # API response time threshold (in milliseconds)
+  response_time_threshold: 5000
+
+# Notification settings (for future use)
+notifications:
+  # Enable notifications for failures
+  on_failure: true
+  
+  # Enable notifications for stale data
+  on_stale_data: true
+  
+  # Slack webhook URL (optional)
+  slack_webhook: ""
+  
+  # Email notifications (optional)
+  email: "johnhomer@gmail.com"

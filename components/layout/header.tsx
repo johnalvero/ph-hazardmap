@@ -44,7 +44,7 @@ export function Header() {
           <div className="space-y-1 text-xs">
             <p className="font-semibold">Data Sources:</p>
             <ul className="list-disc list-inside text-muted-foreground space-y-1">
-              <li><strong>Earthquakes:</strong> USGS Real-time Feed (Official)</li>
+              <li><strong>Earthquakes:</strong> USGS Philippines Region (4.5°N-21.0°N, 116.0°E-127.0°E)</li>
               <li><strong>Volcanoes:</strong> Demo data (PHIVOLCS format)</li>
               <li><strong>Fault Lines:</strong> GEM Global Active Faults (Scientific, peer-reviewed)</li>
             </ul>

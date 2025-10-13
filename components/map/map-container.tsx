@@ -5,8 +5,9 @@ import Map, { Marker, Popup, NavigationControl, ScaleControl, FullscreenControl,
 import type { LayerProps } from 'react-map-gl'
 import type mapboxgl from 'mapbox-gl'
 import { HazardEvent, FilterState, Earthquake } from '@/types/hazard'
-import { mockVolcanoes } from '@/lib/mock-data'
+// Removed mockVolcanoes import - now fetching real data from API
 import { loadPhilippineFaultLines, faultLinesToGeoJSON, type FaultLine } from '@/lib/data/fault-lines'
+import { getAlertLevelColor } from '@/lib/utils'
 
 interface MapContainerProps {
   filters: FilterState
@@ -29,6 +30,7 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
     coordinates: [number, number]
   } | null>(null)
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([])
+  const [volcanoes, setVolcanoes] = useState<HazardEvent[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [faultLines, setFaultLines] = useState<FaultLine[]>([])
@@ -84,10 +86,40 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
     return () => clearInterval(interval)
   }, [filters.hazardTypes])
 
+  // Fetch real volcano data from API
+  useEffect(() => {
+    async function fetchVolcanoes() {
+      try {
+        setError(null)
+        
+        const response = await fetch('/api/volcanoes')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch volcanoes')
+        }
+        
+        const data = await response.json()
+        setVolcanoes(data.volcanoes)
+        
+        console.log(`Loaded ${data.volcanoes.length} volcanoes from ${data.metadata.source} (cache: ${data.metadata.cache})`)
+      } catch (err) {
+        console.error('Error fetching volcanoes:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load volcanoes')
+      }
+    }
+
+    // Only fetch if volcanoes are enabled
+    if (filters.hazardTypes.includes('volcano')) {
+      fetchVolcanoes()
+    } else {
+      setVolcanoes([])
+    }
+  }, [filters.hazardTypes])
+
   // Combine and filter events
   const events: HazardEvent[] = [
     ...(filters.hazardTypes.includes('earthquake') ? earthquakes : []),
-    ...(filters.hazardTypes.includes('volcano') ? mockVolcanoes : [])
+    ...(filters.hazardTypes.includes('volcano') ? volcanoes : [])
   ].filter(event => {
     if (event.type === 'earthquake') {
       // Filter by magnitude
@@ -337,7 +369,15 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
               <div className="text-xs text-muted-foreground">
                 {popupInfo.type === 'earthquake' 
                   ? popupInfo.place
-                  : popupInfo.location
+                  : (
+                    <div className="space-y-1">
+                      <div>{popupInfo.location}</div>
+                      <div className="flex items-center gap-1">
+                        <div className={`h-2 w-2 rounded-full ${getAlertLevelColor(popupInfo.activityLevel)}`} />
+                        <span>Alert Level {popupInfo.activityLevel}</span>
+                      </div>
+                    </div>
+                  )
                 }
               </div>
             </div>

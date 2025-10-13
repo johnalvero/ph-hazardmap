@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { Filter, ChevronLeft, CalendarIcon } from 'lucide-react'
+import { Filter, ChevronDown, ChevronUp, CalendarIcon } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { format } from 'date-fns'
@@ -20,6 +20,8 @@ interface FilterPanelProps {
 
 export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  console.log('FilterPanel render - isCollapsed:', isCollapsed)
 
   const updateFilters = (updates: Partial<FilterState>) => {
     onFilterChange({ ...filters, ...updates })
@@ -35,13 +37,18 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
 
   if (isCollapsed) {
     return (
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-20 left-4 z-[100]">
         <Button
-          onClick={() => setIsCollapsed(false)}
-          size="icon"
-          className="shadow-lg"
+          onClick={() => {
+            console.log('Open button clicked, setting isCollapsed to false')
+            setIsCollapsed(false)
+          }}
+          size="lg"
+          className="shadow-lg h-12 w-auto px-4 bg-primary text-primary-foreground border border-primary/20 hover:bg-primary/90 transition-all duration-200"
         >
-          <Filter className="h-4 w-4" />
+          <Filter className="h-4 w-4 mr-2" />
+          <span className="text-sm font-medium">Filters</span>
+          <ChevronDown className="h-4 w-4 ml-2" />
         </Button>
       </div>
     )
@@ -58,10 +65,14 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
             </div>
             <Button
               variant="ghost"
-              size="icon"
-              onClick={() => setIsCollapsed(true)}
+              size="sm"
+              className="h-8 w-8 p-0 hover:bg-accent transition-all duration-200"
+              onClick={() => {
+                console.log('Close button clicked, setting isCollapsed to true')
+                setIsCollapsed(true)
+              }}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronUp className="h-4 w-4" />
             </Button>
           </div>
           <CardDescription>
@@ -229,30 +240,6 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
               }
             />
           </div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="population" className="text-sm">
-                Population Density
-              </label>
-              <Switch
-                id="population"
-                checked={filters.showPopulation}
-                onCheckedChange={(checked) => 
-                  updateFilters({ showPopulation: checked })
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="boundaries" className="text-sm">
-                Admin Boundaries
-              </label>
-              <Switch
-                id="boundaries"
-                checked={filters.showAdminBoundaries}
-                onCheckedChange={(checked) => 
-                  updateFilters({ showAdminBoundaries: checked })
-                }
-              />
-            </div>
           </div>
 
           <Separator />
@@ -267,8 +254,6 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
               hazardTypes: ['earthquake', 'volcano'],
               dateRange: { start: weekAgo, end: now },
               magnitudeRange: { min: 0, max: 10 },
-              showPopulation: false,
-              showAdminBoundaries: false,
               showMajorFaults: true,
               showMinorFaults: false
             })

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { fetchUSGSEarthquakes, type USGSTimeframe, type USGSMagnitude } from '@/lib/data/earthquakes'
+import { fetchPhilippineEarthquakes, type USGSTimeframe, type USGSMagnitude } from '@/lib/data/earthquakes'
 import { mockEarthquakes } from '@/lib/mock-data'
 
 // Force this route to be dynamic (uses query parameters)
@@ -26,18 +26,42 @@ export async function GET(request: Request) {
       })
     }
 
-    // Fetch real earthquake data from USGS
-    const earthquakes = await fetchUSGSEarthquakes(timeframe, magnitude)
+    // Convert timeframe to days for Philippine-specific query
+    const timeframeToDays = {
+      'hour': 1,
+      'day': 1,
+      'week': 7,
+      'month': 30
+    }
+    
+    const days = timeframeToDays[timeframe] || 30
+    
+    // Convert magnitude filter to minimum magnitude
+    const magnitudeToMin = {
+      'all': 2.5,
+      'significant': 6.0,
+      'M4.5': 4.5,
+      'M2.5': 2.5,
+      'M1.0': 1.0
+    }
+    
+    const minMagnitude = magnitudeToMin[magnitude] || 2.5
+
+    // Fetch Philippine earthquake data (filtered by region)
+    const earthquakes = await fetchPhilippineEarthquakes(minMagnitude, days)
 
     return NextResponse.json({
       earthquakes,
       metadata: {
         source: 'USGS Earthquake Hazards Program',
-        api: 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php',
+        api: 'https://earthquake.usgs.gov/fdsnws/event/1/query',
+        region: 'Philippines (4.5°N-21.0°N, 116.0°E-127.0°E)',
         generated: new Date().toISOString(),
         count: earthquakes.length,
         timeframe,
         magnitude,
+        minMagnitude,
+        days,
         mode: 'live'
       }
     })

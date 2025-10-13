@@ -1,0 +1,170 @@
+name: Scrape Volcano Data
+
+on:
+  # Trigger every 5 minutes
+  schedule:
+    - cron: '*/5 * * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to trigger scraping on'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+  #        - staging
+  #        - development
+
+  # Trigger on push to main branch (optional)
+  push:
+    branches:
+      - main
+    paths:
+      - 'lib/data/volcanoes.ts'
+      - 'app/api/volcanoes/scrape/route.ts'
+      - '.github/workflows/scrape-volcano-data.yml'
+
+jobs:
+  scrape-volcano-data:
+    name: Scrape PHIVOLCS Volcano Data
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Determine environment URL
+        id: env-url
+        run: |
+          case "${{ github.event.inputs.environment || 'production' }}" in
+            "production")
+              echo "url=https://ph-hazard.zedxperts.com" >> $GITHUB_OUTPUT
+              ;;
+            "staging")
+              echo "url=https://ph-hazard.zedxperts.com" >> $GITHUB_OUTPUT
+              ;;
+            "development")
+              echo "url=https://ph-hazard.zedxperts.com" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "url=https://ph-hazard.zedxperts.com" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Trigger volcano data scraping
+        id: scrape
+        run: |
+          echo "🚀 Triggering volcano data scraping on ${{ steps.env-url.outputs.url }}"
+          
+          # Make the scraping request
+          response=$(curl -s -w "\n%{http_code}" -X POST "${{ steps.env-url.outputs.url }}/api/volcanoes/scrape" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions-Volcano-Scraper/1.0" \
+            --max-time 300)
+          
+          # Extract response body and status code
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          echo "📊 Response Status: $http_code"
+          echo "📄 Response Body: $response_body"
+          
+          # Check if the request was successful
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Volcano data scraping completed successfully"
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "message=Scraping completed successfully" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Volcano data scraping failed with status $http_code"
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "message=Scraping failed with status $http_code" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Verify scraping results
+        if: steps.scrape.outputs.success == 'true'
+        run: |
+          echo "🔍 Verifying scraping results..."
+          
+          # Wait a moment for data to be processed
+          sleep 10
+          
+          # Check if volcano data is available
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}/api/volcanoes")
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          if [ "$http_code" -eq 200 ]; then
+            # Count volcanoes in response
+            volcano_count=$(echo "$response_body" | jq '. | length' 2>/dev/null || echo "0")
+            echo "📊 Found $volcano_count volcanoes in the API response"
+            
+            if [ "$volcano_count" -gt 0 ]; then
+              echo "✅ Verification successful: Volcano data is available"
+            else
+              echo "⚠️ Warning: No volcano data found in API response"
+            fi
+          else
+            echo "❌ Failed to verify scraping results: HTTP $http_code"
+          fi
+
+      - name: Create summary
+        if: always()
+        run: |
+          echo "## 🌋 Volcano Data Scraping Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target URL:** ${{ steps.env-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ steps.scrape.outputs.success == 'true' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Message:** ${{ steps.scrape.outputs.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "🚨 Volcano data scraping failed!"
+          echo "Please check the Amplify app logs and ensure:"
+          echo "1. The app is deployed and accessible"
+          echo "2. S3 credentials are properly configured"
+          echo "3. The scraping endpoint is working"
+          echo "4. PHIVOLCS website is accessible"
+
+  # Optional: Health check job
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: scrape-volcano-data
+    if: always()
+    
+    steps:
+      - name: Check application health
+        run: |
+          echo "🏥 Performing health check..."
+          
+          # Check if the main application is accessible
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}" || echo "000")
+          http_code=$(echo "$response" | tail -n1)
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Application is healthy and accessible"
+          else
+            echo "❌ Application health check failed: HTTP $http_code"
+            exit 1
+          fi

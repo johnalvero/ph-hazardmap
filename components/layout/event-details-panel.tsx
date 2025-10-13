@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { X, ExternalLink, MapPin, Activity, Calendar, Layers } from 'lucide-react'
-import { formatDate, formatDistance, formatMagnitude } from '@/lib/utils'
+import { formatDate, formatDistance, formatMagnitude, getAlertLevelColor } from '@/lib/utils'
 
 interface EventDetailsPanelProps {
   event: HazardEvent
@@ -63,6 +63,14 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                   <div className={`h-3 w-3 rounded-full ${getMagnitudeColor(event.magnitude)}`} />
                   <span className="text-2xl font-bold">
                     M {formatMagnitude(event.magnitude)}
+                  </span>
+                </div>
+              )}
+              {!isEarthquake && (
+                <div className="flex items-center gap-2">
+                  <div className={`h-3 w-3 rounded-full ${getAlertLevelColor(event.activityLevel)}`} />
+                  <span className="text-2xl font-bold">
+                    Level {event.activityLevel}
                   </span>
                 </div>
               )}
@@ -162,6 +170,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                   </div>
                 </div>
 
+
                 <div className="flex items-start gap-2">
                   <Layers className="h-4 w-4 mt-1 text-muted-foreground" />
                   <div className="flex-1">
@@ -195,12 +204,86 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                   </div>
                 </div>
 
-                {event.description && (
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      {event.description}
-                    </p>
+
+                {/* Parameters Section */}
+                {event.parameters && Object.keys(event.parameters).length > 0 && (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex gap-1">
+                        <div className="w-1 h-3 bg-green-500 rounded-sm"></div>
+                        <div className="w-1 h-3 bg-red-500 rounded-sm"></div>
+                        <div className="w-1 h-3 bg-blue-500 rounded-sm"></div>
+                      </div>
+                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                        Monitoring Parameters
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      {Object.entries(event.parameters).map(([key, value]) => (
+                        <div key={key} className="text-xs">
+                          <div className="flex">
+                            <span className="text-blue-700 dark:text-blue-300 font-medium min-w-0 flex-shrink-0">
+                              {key}:
+                            </span>
+                            <span className="text-blue-600 dark:text-blue-400 ml-2 break-words">
+                              {value}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+                )}
+
+                {/* Should Not Be Allowed Section */}
+                {event.shouldNotBeAllowed && (
+                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg shadow-sm">
+                    <p className="text-sm font-semibold text-red-800 dark:text-red-200 mb-3">
+                      Should not be allowed:
+                    </p>
+                    <div className="text-xs text-red-700 dark:text-red-300 leading-relaxed">
+                      <ul className="ml-4 space-y-1">
+                        {event.shouldNotBeAllowed.split(';').map((item, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-red-500 mr-2 mt-0.5">•</span>
+                            <span>{item.trim()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reminder Section */}
+                {event.reminder && (
+                  <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg shadow-sm">
+                    <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-3">
+                      Reminder:
+                    </p>
+                    <div className="text-xs text-yellow-700 dark:text-yellow-300 leading-relaxed">
+                      <ul className="ml-4 space-y-1">
+                        {event.reminder.split(';').map((item, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-yellow-500 mr-2 mt-0.5">•</span>
+                            <span>{item.trim()}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+
+                {/* Bulletin Link */}
+                {event.bulletinUrl && (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => window.open(event.bulletinUrl, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View PHIVOLCS Bulletin
+                  </Button>
                 )}
               </div>
             </>

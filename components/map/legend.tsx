@@ -2,12 +2,43 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { ChevronDown, ChevronUp, Info } from 'lucide-react'
 
-export function MapLegend() {
+interface MapLegendProps {
+  isCollapsed: boolean
+  onToggle: () => void
+}
+
+export function MapLegend({ isCollapsed, onToggle }: MapLegendProps) {
+  if (isCollapsed) {
+    return (
+      <Button
+        onClick={onToggle}
+        size="lg"
+        className="shadow-lg h-12 w-auto px-4 bg-primary text-primary-foreground border border-primary/20 hover:bg-primary/90 transition-all duration-200"
+      >
+        <Info className="h-4 w-4 mr-2" />
+        <span className="text-sm font-medium">Legend</span>
+        <ChevronDown className="h-4 w-4 ml-2" />
+      </Button>
+    )
+  }
+
   return (
     <Card className="shadow-lg">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm">Legend</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm">Legend</CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 hover:bg-accent transition-all duration-200"
+            onClick={onToggle}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-3 text-xs">
         {/* Earthquakes */}

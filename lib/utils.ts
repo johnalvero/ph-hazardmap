@@ -23,3 +23,29 @@ export function formatMagnitude(magnitude: number): string {
   return magnitude.toFixed(1)
 }
 
+export function getMagnitudeColor(magnitude: number): string {
+  if (magnitude >= 7.0) return 'bg-red-500'
+  if (magnitude >= 6.0) return 'bg-orange-500'
+  if (magnitude >= 5.0) return 'bg-yellow-500'
+  if (magnitude >= 4.0) return 'bg-green-500'
+  return 'bg-blue-500'
+}
+
+export function getStatusColor(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+  switch (status) {
+    case 'warning': return 'destructive'
+    case 'watch': return 'destructive'
+    case 'advisory': return 'secondary'
+    case 'normal': return 'default'
+    default: return 'outline'
+  }
+}
+
+export function getAlertLevelColor(level: number): string {
+  if (level >= 4) return 'bg-red-500'
+  if (level >= 3) return 'bg-orange-500'
+  if (level >= 2) return 'bg-yellow-500'
+  if (level >= 1) return 'bg-blue-500'
+  return 'bg-gray-500'
+}
+

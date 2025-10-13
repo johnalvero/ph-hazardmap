@@ -1,0 +1,156 @@
+name: Volcano Data Monitoring
+
+on:
+  # Run every 10 minutes for monitoring
+  schedule:
+    - cron: '*/10 * * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      check_interval:
+        description: 'Check interval in minutes'
+        required: false
+        default: '60'
+        type: string
+
+jobs:
+  monitor-volcano-data:
+    name: Monitor Volcano Data Freshness
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check volcano data freshness
+        id: check-freshness
+        run: |
+          echo "🔍 Checking volcano data freshness..."
+          
+          # Get current volcano data
+          response=$(curl -s -w "\n%{http_code}" "https://ph-hazard.zedxperts.com/api/volcanoes")
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          if [ "$http_code" -ne 200 ]; then
+            echo "❌ Failed to fetch volcano data: HTTP $http_code"
+            echo "fresh=false" >> $GITHUB_OUTPUT
+            echo "error=Failed to fetch data" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Check if we have volcano data
+          volcano_count=$(echo "$response_body" | jq '. | length' 2>/dev/null || echo "0")
+          
+          if [ "$volcano_count" -eq 0 ]; then
+            echo "⚠️ No volcano data available"
+            echo "fresh=false" >> $GITHUB_OUTPUT
+            echo "error=No volcano data" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          echo "📊 Found $volcano_count volcanoes"
+          
+          # Check data freshness by looking at the first volcano's lastUpdate
+          last_update=$(echo "$response_body" | jq -r '.[0].lastUpdate' 2>/dev/null || echo "")
+          
+          if [ -z "$last_update" ] || [ "$last_update" = "null" ]; then
+            echo "⚠️ No timestamp information available"
+            echo "fresh=false" >> $GITHUB_OUTPUT
+            echo "error=No timestamp" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
+          # Convert to Unix timestamp and check age
+          last_update_epoch=$(date -d "$last_update" +%s 2>/dev/null || echo "0")
+          current_epoch=$(date +%s)
+          age_minutes=$(( (current_epoch - last_update_epoch) / 60 ))
+          
+          echo "🕐 Last update: $last_update"
+          echo "⏰ Age: $age_minutes minutes"
+          
+          # Consider data fresh if it's less than 30 minutes old
+          if [ "$age_minutes" -lt 30 ]; then
+            echo "✅ Data is fresh (less than 30 minutes old)"
+            echo "fresh=true" >> $GITHUB_OUTPUT
+            echo "age=$age_minutes" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ Data is stale (older than 30 minutes)"
+            echo "fresh=false" >> $GITHUB_OUTPUT
+            echo "age=$age_minutes" >> $GITHUB_OUTPUT
+            echo "error=Data is stale" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger scraping if data is stale
+        if: steps.check-freshness.outputs.fresh == 'false'
+        run: |
+          echo "🔄 Data is stale, triggering scraping..."
+          
+          response=$(curl -s -w "\n%{http_code}" -X POST "https://ph-hazard.zedxperts.com/api/volcanoes/scrape" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions-Volcano-Monitor/1.0" \
+            --max-time 300)
+          
+          http_code=$(echo "$response" | tail -n1)
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Scraping triggered successfully"
+          else
+            echo "❌ Failed to trigger scraping: HTTP $http_code"
+            exit 1
+          fi
+
+      - name: Create monitoring report
+        if: always()
+        run: |
+          echo "## 🌋 Volcano Data Monitoring Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ steps.check-freshness.outputs.fresh == 'true' && '✅ Fresh' || '⚠️ Stale' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Data Age:** ${{ steps.check-freshness.outputs.age || 'Unknown' }} minutes" >> $GITHUB_STEP_SUMMARY
+          echo "**Error:** ${{ steps.check-freshness.outputs.error || 'None' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Check Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Check:** $(date -u -d '+10 minutes' '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+
+  # Optional: Performance monitoring
+  performance-check:
+    name: Performance Check
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Check API response times
+        run: |
+          echo "⚡ Checking API performance..."
+          
+          # Test main page load time
+          start_time=$(date +%s%3N)
+          curl -s "https://ph-hazard.zedxperts.com" > /dev/null
+          end_time=$(date +%s%3N)
+          page_load_time=$((end_time - start_time))
+          
+          # Test API response time
+          start_time=$(date +%s%3N)
+          curl -s "https://ph-hazard.zedxperts.com/api/volcanoes" > /dev/null
+          end_time=$(date +%s%3N)
+          api_response_time=$((end_time - start_time))
+          
+          echo "📊 Page load time: ${page_load_time}ms"
+          echo "📊 API response time: ${api_response_time}ms"
+          
+          # Alert if response times are too high
+          if [ "$api_response_time" -gt 5000 ]; then
+            echo "⚠️ API response time is high: ${api_response_time}ms"
+          else
+            echo "✅ API response time is acceptable: ${api_response_time}ms"
+          fi

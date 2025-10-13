@@ -1,0 +1,219 @@
+name: Test Volcano Scraper
+
+on:
+  # Manual trigger only
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - full
+          - scraping-only
+          - api-only
+          - s3-only
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+      verbose:
+        description: 'Enable verbose logging'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  test-volcano-scraper:
+    name: Test Volcano Scraper
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Determine environment URL
+        id: env-url
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            "production")
+              echo "url=https://ph-hazard.zedxperts.com" >> $GITHUB_OUTPUT
+              ;;
+            "staging")
+              echo "url=https://ph-hazard.zedxperts.com" >> $GITHUB_OUTPUT
+              ;;
+            "development")
+              echo "url=https://ph-hazard.zedxperts.com" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "url=https://ph-hazard.zedxperts.com" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Test application health
+        if: github.event.inputs.test_type == 'full' || github.event.inputs.test_type == 'api-only'
+        run: |
+          echo "🏥 Testing application health..."
+          
+          # Test main page
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}")
+          http_code=$(echo "$response" | tail -n1)
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Main page is accessible"
+          else
+            echo "❌ Main page failed: HTTP $http_code"
+            exit 1
+          fi
+
+      - name: Test volcano API endpoint
+        if: github.event.inputs.test_type == 'full' || github.event.inputs.test_type == 'api-only'
+        id: test-api
+        run: |
+          echo "🌋 Testing volcano API endpoint..."
+          
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}/api/volcanoes")
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          echo "📊 API Response Status: $http_code"
+          
+          if [ "$http_code" -eq 200 ]; then
+            volcano_count=$(echo "$response_body" | jq '. | length' 2>/dev/null || echo "0")
+            echo "✅ API endpoint working - Found $volcano_count volcanoes"
+            echo "volcano_count=$volcano_count" >> $GITHUB_OUTPUT
+            
+            if [ "${{ github.event.inputs.verbose }}" == "true" ]; then
+              echo "📄 Response body:"
+              echo "$response_body" | jq '.' 2>/dev/null || echo "$response_body"
+            fi
+          else
+            echo "❌ API endpoint failed: HTTP $http_code"
+            echo "volcano_count=0" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Test scraping endpoint
+        if: github.event.inputs.test_type == 'full' || github.event.inputs.test_type == 'scraping-only'
+        id: test-scraping
+        run: |
+          echo "🔄 Testing scraping endpoint..."
+          
+          response=$(curl -s -w "\n%{http_code}" -X POST "${{ steps.env-url.outputs.url }}/api/volcanoes/scrape" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions-Test/1.0" \
+            --max-time 600)
+          
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          echo "📊 Scraping Response Status: $http_code"
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Scraping endpoint working"
+            echo "scraping_success=true" >> $GITHUB_OUTPUT
+            
+            if [ "${{ github.event.inputs.verbose }}" == "true" ]; then
+              echo "📄 Response body:"
+              echo "$response_body" | jq '.' 2>/dev/null || echo "$response_body"
+            fi
+          else
+            echo "❌ Scraping endpoint failed: HTTP $http_code"
+            echo "scraping_success=false" >> $GITHUB_OUTPUT
+            echo "📄 Error response: $response_body"
+            exit 1
+          fi
+
+      - name: Verify scraping results
+        if: github.event.inputs.test_type == 'full' && steps.test-scraping.outputs.scraping_success == 'true'
+        run: |
+          echo "🔍 Verifying scraping results..."
+          
+          # Wait for data to be processed
+          sleep 15
+          
+          # Check if new data is available
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}/api/volcanoes")
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          if [ "$http_code" -eq 200 ]; then
+            new_volcano_count=$(echo "$response_body" | jq '. | length' 2>/dev/null || echo "0")
+            echo "📊 New volcano count: $new_volcano_count"
+            
+            if [ "$new_volcano_count" -gt 0 ]; then
+              echo "✅ Scraping verification successful"
+              
+              # Check data freshness
+              last_update=$(echo "$response_body" | jq -r '.[0].lastUpdate' 2>/dev/null || echo "")
+              if [ -n "$last_update" ] && [ "$last_update" != "null" ]; then
+                echo "🕐 Latest data timestamp: $last_update"
+              fi
+            else
+              echo "⚠️ No volcano data found after scraping"
+            fi
+          else
+            echo "❌ Failed to verify scraping results: HTTP $http_code"
+          fi
+
+      - name: Test S3 connectivity (if configured)
+        if: github.event.inputs.test_type == 'full' || github.event.inputs.test_type == 's3-only'
+        run: |
+          echo "☁️ Testing S3 connectivity..."
+          
+          # This is a basic test - in a real scenario, you might want to
+          # create a test endpoint that specifically tests S3 connectivity
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}/api/volcanoes")
+          http_code=$(echo "$response" | tail -n1)
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ S3 connectivity appears to be working (data retrieved successfully)"
+          else
+            echo "⚠️ S3 connectivity test inconclusive (API returned HTTP $http_code)"
+          fi
+
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "## 🧪 Volcano Scraper Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Type:** ${{ github.event.inputs.test_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target URL:** ${{ steps.env-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Verbose Logging:** ${{ github.event.inputs.verbose }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ github.event.inputs.test_type }}" == "full" ] || [ "${{ github.event.inputs.test_type }}" == "api-only" ]; then
+            echo "**API Test:** ${{ steps.test-api.outputs.volcano_count || 'Not run' }} volcanoes found" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ github.event.inputs.test_type }}" == "full" ] || [ "${{ github.event.inputs.test_type }}" == "scraping-only" ]; then
+            echo "**Scraping Test:** ${{ steps.test-scraping.outputs.scraping_success == 'true' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Test Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "🧹 Test cleanup completed"
