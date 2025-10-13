@@ -50,7 +50,7 @@ jobs:
           fi
           
           # Check if we have volcano data
-          volcano_count=$(echo "$response_body" | jq '. | length' 2>/dev/null || echo "0")
+          volcano_count=$(echo "$response_body" | jq '.volcanoes | length' 2>/dev/null || echo "0")
           
           if [ "$volcano_count" -eq 0 ]; then
             echo "⚠️ No volcano data available"
@@ -61,10 +61,29 @@ jobs:
           
           echo "📊 Found $volcano_count volcanoes"
           
-          # Check data freshness by looking at the first volcano's lastUpdate
-          last_update=$(echo "$response_body" | jq -r '.[0].lastUpdate' 2>/dev/null || echo "")
+          # Debug: Show the structure of the response
+          echo "🔍 API Response structure:"
+          echo "$response_body" | jq 'keys' 2>/dev/null || echo "Failed to parse JSON structure"
           
-          if [ -z "$last_update" ] || [ "$last_update" = "null" ]; then
+          # Check data freshness by looking at the metadata.generated timestamp first, then first volcano's lastUpdate
+          metadata_generated=$(echo "$response_body" | jq -r '.metadata.generated' 2>/dev/null || echo "")
+          last_update=$(echo "$response_body" | jq -r '.volcanoes[0].lastUpdate' 2>/dev/null || echo "")
+          
+          echo "🔍 Timestamp sources:"
+          echo "  - metadata.generated: $metadata_generated"
+          echo "  - volcanoes[0].lastUpdate: $last_update"
+          
+          # Use metadata.generated as primary timestamp, fallback to volcano lastUpdate
+          timestamp_to_use=""
+          if [ -n "$metadata_generated" ] && [ "$metadata_generated" != "null" ]; then
+            timestamp_to_use="$metadata_generated"
+            echo "🕐 Using metadata timestamp: $timestamp_to_use"
+          elif [ -n "$last_update" ] && [ "$last_update" != "null" ]; then
+            timestamp_to_use="$last_update"
+            echo "🕐 Using volcano timestamp: $timestamp_to_use"
+          fi
+          
+          if [ -z "$timestamp_to_use" ]; then
             echo "⚠️ No timestamp information available"
             echo "fresh=false" >> $GITHUB_OUTPUT
             echo "error=No timestamp" >> $GITHUB_OUTPUT
@@ -72,11 +91,11 @@ jobs:
           fi
           
           # Convert to Unix timestamp and check age
-          last_update_epoch=$(date -d "$last_update" +%s 2>/dev/null || echo "0")
+          timestamp_epoch=$(date -d "$timestamp_to_use" +%s 2>/dev/null || echo "0")
           current_epoch=$(date +%s)
-          age_minutes=$(( (current_epoch - last_update_epoch) / 60 ))
+          age_minutes=$(( (current_epoch - timestamp_epoch) / 60 ))
           
-          echo "🕐 Last update: $last_update"
+          echo "🕐 Last update: $timestamp_to_use"
           echo "⏰ Age: $age_minutes minutes"
           
           # Consider data fresh if it's less than 30 minutes old

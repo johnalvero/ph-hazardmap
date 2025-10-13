@@ -44,7 +44,7 @@ This directory contains GitHub Actions workflows for automating volcano data scr
 - Verbose logging option
 - Comprehensive test reporting
 
-### 4. `config.yml`
+### 4. `../config.yml`
 **Purpose**: Centralized configuration for all workflows
 
 **Contains**:
@@ -57,7 +57,7 @@ This directory contains GitHub Actions workflows for automating volcano data scr
 
 ### 1. Update Configuration
 
-Edit `.github/workflows/config.yml` and update the URLs:
+Edit `.github/config.yml` and update the URLs:
 
 ```yaml
 environments:
@@ -225,7 +225,7 @@ env:
 
 ### Adding New Environments
 
-1. Update `config.yml` with new environment
+1. Update `.github/config.yml` with new environment
 2. Add environment selection to workflow inputs
 3. Update URL determination logic
 

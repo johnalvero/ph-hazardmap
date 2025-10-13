@@ -89,7 +89,7 @@ for file in "${WORKFLOW_FILES[@]}"; do
 done
 
 # Update config.yml if it exists
-config_file="$SCRIPT_DIR/config.yml"
+config_file="$SCRIPT_DIR/../config.yml"
 if [ -f "$config_file" ]; then
     print_status "Updating config.yml..."
     
