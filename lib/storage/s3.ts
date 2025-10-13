@@ -7,6 +7,17 @@ import { Volcano } from '@/types/hazard'
 const createS3Client = () => {
   const region = process.env.PH_HAZARD_S3_REGION || process.env.AWS_REGION || process.env.S3_REGION || 'ap-southeast-1'
   
+  // Debug logging for Amplify deployment
+  console.log('🔍 S3 Configuration Debug:')
+  console.log(`  - NODE_ENV: ${process.env.NODE_ENV}`)
+  console.log(`  - Region: ${region}`)
+  console.log(`  - PH_HAZARD_S3_REGION: ${process.env.PH_HAZARD_S3_REGION}`)
+  console.log(`  - AWS_REGION: ${process.env.AWS_REGION}`)
+  console.log(`  - S3_REGION: ${process.env.S3_REGION}`)
+  console.log(`  - PH_HAZARD_S3_BUCKET_NAME: ${process.env.PH_HAZARD_S3_BUCKET_NAME}`)
+  console.log(`  - S3_BUCKET_NAME: ${process.env.S3_BUCKET_NAME}`)
+  console.log(`  - AWS_S3_BUCKET_NAME: ${process.env.AWS_S3_BUCKET_NAME}`)
+  
   // Check if we have explicit credentials (for local development)
   // Support multiple credential formats: PH_HAZARD_S3_*, AWS_*, and S3_*
   const hasExplicitCredentials = !!(
@@ -14,6 +25,8 @@ const createS3Client = () => {
     (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
     (process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY)
   )
+  
+  console.log(`  - Has explicit credentials: ${hasExplicitCredentials}`)
   
   if (hasExplicitCredentials) {
     console.log('🔑 Using explicit S3 credentials for local development')
@@ -105,6 +118,10 @@ export async function saveVolcanoDataToS3(volcanoes: Volcano[]): Promise<void> {
  * Get volcano data from S3
  */
 export async function getVolcanoDataFromS3(): Promise<VolcanoData | null> {
+  console.log('🔍 Attempting to get volcano data from S3...')
+  console.log(`  - Bucket: ${BUCKET_NAME}`)
+  console.log(`  - Key: ${OBJECT_KEY}`)
+  
   if (!BUCKET_NAME) {
     console.log('⚠️ S3 bucket name not configured, skipping S3 retrieval')
     return null
@@ -116,7 +133,9 @@ export async function getVolcanoDataFromS3(): Promise<VolcanoData | null> {
       Key: OBJECT_KEY
     })
 
+    console.log('📡 Sending GetObject command to S3...')
     const response = await s3Client.send(command)
+    console.log('✅ S3 GetObject command successful')
     
     if (!response.Body) {
       console.log('📭 No volcano data found in S3')
@@ -177,11 +196,21 @@ export function isS3Configured(): boolean {
   // For Amplify deployment: IAM role provides credentials automatically
   const isLocalDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
   
+  console.log('🔍 S3 Configuration Check:')
+  console.log(`  - Bucket configured: ${bucketConfigured} (${BUCKET_NAME})`)
+  console.log(`  - Region configured: ${regionConfigured}`)
+  console.log(`  - Has explicit credentials: ${hasExplicitCredentials}`)
+  console.log(`  - Is local development: ${isLocalDevelopment}`)
+  
   if (isLocalDevelopment) {
     // In local development, we need explicit credentials
-    return bucketConfigured && regionConfigured && hasExplicitCredentials
+    const result = bucketConfigured && regionConfigured && hasExplicitCredentials
+    console.log(`  - Local development result: ${result}`)
+    return result
   } else {
     // In production (Amplify), IAM role provides credentials
-    return bucketConfigured && regionConfigured
+    const result = bucketConfigured && regionConfigured
+    console.log(`  - Production result: ${result}`)
+    return result
   }
 }
