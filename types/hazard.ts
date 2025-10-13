@@ -40,10 +40,7 @@ export type HazardEvent = Earthquake | Volcano
 
 export interface FilterState {
   hazardTypes: HazardType[]
-  dateRange: {
-    start: Date | null
-    end: Date | null
-  }
+  daysAgo: number // Number of days ago to fetch data (1-30)
   magnitudeRange: {
     min: number
     max: number

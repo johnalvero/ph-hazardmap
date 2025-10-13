@@ -53,7 +53,7 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
         setIsLoading(true)
         setError(null)
         
-        const response = await fetch('/api/earthquakes?timeframe=month&magnitude=all')
+        const response = await fetch(`/api/earthquakes?daysAgo=${filters.daysAgo}&magnitude=all`)
         
         if (!response.ok) {
           throw new Error('Failed to fetch earthquakes')
@@ -84,7 +84,7 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
     const interval = setInterval(fetchEarthquakes, 5 * 60 * 1000)
     
     return () => clearInterval(interval)
-  }, [filters.hazardTypes])
+  }, [filters.hazardTypes, filters.daysAgo])
 
   // Fetch real volcano data from API
   useEffect(() => {
@@ -126,12 +126,10 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
       const magnitudeMatch = event.magnitude >= filters.magnitudeRange.min && 
                             event.magnitude <= filters.magnitudeRange.max
       
-      // Filter by date range
-      let dateMatch = true
-      if (filters.dateRange.start && filters.dateRange.end) {
-        const eventDate = new Date(event.timestamp)
-        dateMatch = eventDate >= filters.dateRange.start && eventDate <= filters.dateRange.end
-      }
+      // Filter by days ago
+      const eventDate = new Date(event.timestamp)
+      const daysAgo = (Date.now() - eventDate.getTime()) / (1000 * 60 * 60 * 24)
+      const dateMatch = daysAgo <= filters.daysAgo
       
       return magnitudeMatch && dateMatch
     }

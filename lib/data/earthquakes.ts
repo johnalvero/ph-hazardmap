@@ -186,7 +186,9 @@ export async function fetchUSGSEarthquakesByRegion(
 }
 
 /**
- * Fetch earthquakes near the Philippines (optimized)
+ * Fetch earthquakes in the Pacific Ring of Fire region (expanded coverage)
+ * Includes: Philippines, Pacific Ocean, South China Sea, Brunei, Vietnam, 
+ * Taiwan, Hong Kong, Japan, and surrounding regions for tsunami risk assessment
  */
 export async function fetchPhilippineEarthquakes(
   minMagnitude: number = 2.5,
@@ -195,12 +197,14 @@ export async function fetchPhilippineEarthquakes(
   const startTime = new Date()
   startTime.setDate(startTime.getDate() - days)
 
-  // Philippines bounding box (approximate)
+  // Expanded Pacific Ring of Fire bounding box for tsunami risk assessment
+  // Covers: Philippines, Pacific Ocean, South China Sea, Brunei, Vietnam, 
+  // Taiwan, Hong Kong, Japan, Indonesia, Malaysia, and surrounding regions
   return fetchUSGSEarthquakesByRegion(
-    4.5,   // Min latitude (Mindanao south)
-    21.0,  // Max latitude (Luzon north)
-    116.0, // Min longitude (west)
-    127.0, // Max longitude (east)
+    -10.0, // Min latitude (southern Indonesia)
+    50.0,  // Max latitude (northern Japan)
+    100.0, // Min longitude (western Indonesia/Indian Ocean)
+    160.0, // Max longitude (eastern Pacific)
     startTime,
     minMagnitude
   )

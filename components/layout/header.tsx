@@ -37,14 +37,14 @@ export function Header() {
           <div>
             <h3 className="font-semibold mb-2">About PH Hazard Map</h3>
             <p className="text-muted-foreground mb-2">
-              PH Hazard Map provides real-time visualization of natural hazards including earthquakes and volcanic activity.
+              PH Hazard Map provides real-time visualization of natural hazards including earthquakes and volcanic activity across the Pacific Ring of Fire region, with special focus on tsunami risk assessment for the Philippines.
             </p>
           </div>
           
           <div className="space-y-1 text-xs">
             <p className="font-semibold">Data Sources:</p>
             <ul className="list-disc list-inside text-muted-foreground space-y-1">
-              <li><strong>Earthquakes:</strong> USGS Philippines Region (4.5°N-21.0°N, 116.0°E-127.0°E)</li>
+              <li><strong>Earthquakes:</strong> USGS Pacific Ring of Fire (-10.0°N-50.0°N, 100.0°E-160.0°E)</li>
               <li><strong>Volcanoes:</strong> Demo data (PHIVOLCS format)</li>
               <li><strong>Fault Lines:</strong> GEM Global Active Faults (Scientific, peer-reviewed)</li>
             </ul>

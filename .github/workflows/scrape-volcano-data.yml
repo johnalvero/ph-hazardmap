@@ -72,8 +72,7 @@ jobs:
           echo "🚀 Triggering volcano data scraping on ${{ steps.env-url.outputs.url }}"
           
           # Make the scraping request
-          response=$(curl -s -w "\n%{http_code}" -X POST "${{ steps.env-url.outputs.url }}/api/volcanoes/scrape" \
-            -H "Content-Type: application/json" \
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}/api/volcanoes/scrape" \
             -H "User-Agent: GitHub-Actions-Volcano-Scraper/1.0" \
             --max-time 300)
           

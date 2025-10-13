@@ -117,8 +117,7 @@ jobs:
         run: |
           echo "🔄 Testing scraping endpoint..."
           
-          response=$(curl -s -w "\n%{http_code}" -X POST "${{ steps.env-url.outputs.url }}/api/volcanoes/scrape" \
-            -H "Content-Type: application/json" \
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}/api/volcanoes/scrape" \
             -H "User-Agent: GitHub-Actions-Test/1.0" \
             --max-time 600)
           

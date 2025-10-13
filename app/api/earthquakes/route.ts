@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { fetchPhilippineEarthquakes, type USGSTimeframe, type USGSMagnitude } from '@/lib/data/earthquakes'
+import { fetchPhilippineEarthquakes, type USGSMagnitude } from '@/lib/data/earthquakes'
 import { mockEarthquakes } from '@/lib/mock-data'
 
 // Force this route to be dynamic (uses query parameters)
@@ -9,7 +9,7 @@ export const revalidate = 300 // Revalidate every 5 minutes
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const timeframe = (searchParams.get('timeframe') || 'month') as USGSTimeframe
+    const daysAgo = parseInt(searchParams.get('daysAgo') || '7')
     const magnitude = (searchParams.get('magnitude') || 'all') as USGSMagnitude
     const useMock = searchParams.get('mock') === 'true'
 
@@ -26,15 +26,8 @@ export async function GET(request: Request) {
       })
     }
 
-    // Convert timeframe to days for Philippine-specific query
-    const timeframeToDays = {
-      'hour': 1,
-      'day': 1,
-      'week': 7,
-      'month': 30
-    }
-    
-    const days = timeframeToDays[timeframe] || 30
+    // Validate daysAgo parameter (1-30 days)
+    const days = Math.max(1, Math.min(30, daysAgo))
     
     // Convert magnitude filter to minimum magnitude
     const magnitudeToMin = {
@@ -55,13 +48,12 @@ export async function GET(request: Request) {
       metadata: {
         source: 'USGS Earthquake Hazards Program',
         api: 'https://earthquake.usgs.gov/fdsnws/event/1/query',
-        region: 'Philippines (4.5°N-21.0°N, 116.0°E-127.0°E)',
+        region: 'Pacific Ring of Fire (-10.0°N-50.0°N, 100.0°E-160.0°E)',
         generated: new Date().toISOString(),
         count: earthquakes.length,
-        timeframe,
+        daysAgo: days,
         magnitude,
         minMagnitude,
-        days,
         mode: 'live'
       }
     })

@@ -7,11 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { Filter, ChevronDown, ChevronUp, CalendarIcon } from 'lucide-react'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
+import { Filter, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 
 interface FilterPanelProps {
   filters: FilterState
@@ -107,88 +103,29 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
 
           <Separator />
 
-          {/* Date Range */}
+          {/* Time Range */}
           <div className="space-y-3">
-            <h4 className="text-sm font-medium">Date Range</h4>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-muted-foreground">From:</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !filters.dateRange.start && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filters.dateRange.start ? format(filters.dateRange.start, "MMM dd, yyyy") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={filters.dateRange.start || undefined}
-                      onSelect={(date) => updateFilters({ dateRange: { ...filters.dateRange, start: date || null } })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-muted-foreground">To:</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !filters.dateRange.end && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {filters.dateRange.end ? format(filters.dateRange.end, "MMM dd, yyyy") : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={filters.dateRange.end || undefined}
-                      onSelect={(date) => updateFilters({ dateRange: { ...filters.dateRange, end: date || null } })}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <h4 className="text-sm font-medium">Time Range</h4>
             </div>
-            <div className="flex gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={() => {
-                  const now = new Date()
-                  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-                  updateFilters({ dateRange: { start: weekAgo, end: now } })
-                }}
-              >
-                7 days
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 text-xs"
-                onClick={() => {
-                  const now = new Date()
-                  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-                  updateFilters({ dateRange: { start: monthAgo, end: now } })
-                }}
-              >
-                30 days
-              </Button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-muted-foreground">Days Ago:</label>
+                <span className="text-xs font-medium">{filters.daysAgo} {filters.daysAgo === 1 ? 'day' : 'days'}</span>
+              </div>
+              <Slider
+                value={[filters.daysAgo]}
+                onValueChange={(value) => updateFilters({ daysAgo: value[0] })}
+                min={1}
+                max={30}
+                step={1}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>1 day</span>
+                <span>30 days</span>
+              </div>
             </div>
           </div>
 
@@ -248,11 +185,9 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
             variant="outline"
             className="w-full"
           onClick={() => {
-            const now = new Date()
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
             updateFilters({
               hazardTypes: ['earthquake', 'volcano'],
-              dateRange: { start: weekAgo, end: now },
+              daysAgo: 7,
               magnitudeRange: { min: 0, max: 10 },
               showMajorFaults: true,
               showMinorFaults: false

@@ -15,10 +15,7 @@ export default function Home() {
   const [isLegendCollapsed, setIsLegendCollapsed] = useState(true)
   const [filters, setFilters] = useState<FilterState>({
     hazardTypes: ['earthquake', 'volcano'],
-    dateRange: {
-      start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-      end: new Date() // now
-    },
+    daysAgo: 7, // Default to 7 days ago
     magnitudeRange: {
       min: 0,
       max: 10

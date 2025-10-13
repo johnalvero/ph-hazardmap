@@ -115,8 +115,7 @@ jobs:
         run: |
           echo "🔄 Data is stale, triggering scraping..."
           
-          response=$(curl -s -w "\n%{http_code}" -X POST "https://ph-hazard.zedxperts.com/api/volcanoes/scrape" \
-            -H "Content-Type: application/json" \
+          response=$(curl -s -w "\n%{http_code}" "https://ph-hazard.zedxperts.com/api/volcanoes/scrape" \
             -H "User-Agent: GitHub-Actions-Volcano-Monitor/1.0" \
             --max-time 300)
           
