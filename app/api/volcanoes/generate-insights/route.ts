@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getVolcanoesFromCache, setVolcanoesInCache } from '@/lib/storage/cache'
 import { getVolcanoDataFromS3, saveVolcanoDataToS3, isS3Configured } from '@/lib/storage/s3'
-import { generateVolcanoInsight, isBedrockConfigured } from '@/lib/services/bedrock'
+import { generateBatchVolcanoInsights, isBedrockConfigured } from '@/lib/services/bedrock'
 
 // Force this route to be dynamic
 export const dynamic = 'force-dynamic'
@@ -51,33 +51,23 @@ export async function GET() {
       }, { status: 500 })
     }
 
+    // Generate AI insights for all volcanoes in a single batch call
+    const batchResults = await generateBatchVolcanoInsights(volcanoes)
+    
     // Create a new array with AI insights
     const volcanoesWithInsights = []
     let successCount = 0
     
     for (let i = 0; i < volcanoes.length; i++) {
       const volcano = volcanoes[i]
+      const result = batchResults.find(r => r.name === volcano.name)
       
-      try {
-        const aiInsight = await generateVolcanoInsight(volcano)
-        
-        if (aiInsight) {
-          const volcanoWithInsight = { ...volcano, aiInsight }
-          volcanoesWithInsights.push(volcanoWithInsight)
-          successCount++
-        } else {
-          volcanoesWithInsights.push(volcano)
-        }
-      } catch (error) {
+      if (result && result.insight) {
+        const volcanoWithInsight = { ...volcano, aiInsight: result.insight }
+        volcanoesWithInsights.push(volcanoWithInsight)
+        successCount++
+      } else {
         volcanoesWithInsights.push(volcano)
-        // Log the error for debugging
-        console.error(`Failed to generate AI insight for ${volcano.name}:`, error)
-        // Continue with other volcanoes even if one fails
-      }
-      
-      // Add delay to avoid rate limiting (6 seconds)
-      if (i < volcanoes.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 6000))
       }
     }
     

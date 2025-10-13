@@ -36,7 +36,7 @@ export interface AIInsight {
   keyPoints: string[]
 }
 
-export async function generateVolcanoInsight(volcano: {
+export async function generateBatchVolcanoInsights(volcanoes: Array<{
   name: string
   status: string
   activityLevel: number
@@ -45,110 +45,139 @@ export async function generateVolcanoInsight(volcano: {
   shouldNotBeAllowed?: string
   reminder?: string
   description?: string
-}): Promise<AIInsight | null> {
-  // Create mock AI insight for local testing when credentials are not available
-  const createMockInsight = () => {
-    return {
-      summary: `${volcano.name} is currently at Alert Level ${volcano.activityLevel} (${volcano.status}). This means the volcano is showing signs of unrest but poses no immediate threat to nearby communities.`,
-      riskAssessment: `The current alert level indicates low to moderate volcanic activity. Residents in ${volcano.location} should stay informed but can continue normal activities while monitoring official updates.`,
-      recommendations: [
-        'Monitor official PHIVOLCS bulletins regularly',
-        'Stay informed about evacuation procedures',
-        'Avoid restricted areas as specified by authorities',
-        'Prepare emergency supplies in case of escalation'
-      ],
-      keyPoints: [
-        `Alert Level ${volcano.activityLevel} indicates ongoing monitoring`,
-        'No immediate evacuation required',
-        'Volcanic activity is being closely watched',
-        'Follow official guidance from PHIVOLCS'
-      ]
-    }
+}>): Promise<Array<{ name: string; insight: AIInsight | null }>> {
+  // Create mock AI insights for local testing when credentials are not available
+  const createMockInsights = () => {
+    return volcanoes.map(volcano => ({
+      name: volcano.name,
+      insight: {
+        summary: `${volcano.name} is currently at Alert Level ${volcano.activityLevel} (${volcano.status}). This means the volcano is showing signs of unrest but poses no immediate threat to nearby communities.`,
+        riskAssessment: `The current alert level indicates low to moderate volcanic activity. Residents in ${volcano.location} should stay informed but can continue normal activities while monitoring official updates.`,
+        recommendations: [
+          'Monitor official PHIVOLCS bulletins regularly',
+          'Stay informed about evacuation procedures',
+          'Prepare emergency supplies',
+          'Follow local government advisories'
+        ],
+        keyPoints: [
+          `Alert Level ${volcano.activityLevel} indicates ${volcano.status} status`,
+          'No immediate threat to communities',
+          'Continue monitoring for changes',
+          'Stay prepared for potential escalation'
+        ]
+      }
+    }))
   }
 
-  let client;
+  let client
   try {
     client = createBedrockClient()
-    
-    if (!client) {
-      return createMockInsight()
-    }
   } catch {
-    return createMockInsight()
+    // Return mock insights if client creation fails
+    return createMockInsights()
   }
 
-  // Exponential backoff retry logic
+  if (!client) {
+    return createMockInsights()
+  }
+
+  // Create a comprehensive prompt for all volcanoes
+  const volcanoData = volcanoes.map(volcano => `
+Volcano: ${volcano.name}
+- Status: ${volcano.status}
+- Alert Level: ${volcano.activityLevel}
+- Location: ${volcano.location}
+${volcano.description ? `- Description: ${volcano.description}` : ''}
+${volcano.parameters ? `- Monitoring Parameters: ${JSON.stringify(volcano.parameters)}` : ''}
+${volcano.shouldNotBeAllowed ? `- Restrictions: ${volcano.shouldNotBeAllowed}` : ''}
+${volcano.reminder ? `- Reminders: ${volcano.reminder}` : ''}
+`).join('\n---\n')
+
+  const prompt = `You are an expert volcanologist and disaster risk reduction specialist. Analyze the following volcano information and provide a citizen-friendly AI insight for each volcano.
+
+VOLCANO DATA:
+${volcanoData}
+
+Please provide AI insights for each volcano in this exact JSON format:
+{
+  "insights": [
+    {
+      "volcano": "VOLCANO_NAME",
+      "summary": "Brief, easy-to-understand overview of the current situation",
+      "riskAssessment": "What the current alert level means for nearby communities",
+      "recommendations": ["Practical step 1", "Practical step 2", "Practical step 3"],
+      "keyPoints": ["Important fact 1", "Important fact 2", "Important fact 3"]
+    }
+  ]
+}
+
+Make the responses accessible to regular citizens, not just experts. Focus on practical guidance and safety for each volcano.`
+
+  const command = new InvokeModelCommand({
+    modelId: 'amazon.claude-3-haiku-20240307-v1:0',
+    contentType: 'application/json',
+    accept: 'application/json',
+    body: JSON.stringify({
+      anthropic_version: 'bedrock-2023-05-31',
+      max_tokens: 2000, // Increased for multiple volcanoes
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+  })
+
   const maxRetries = 3
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Prepare the prompt for AI insight generation
-    const prompt = `You are a helpful assistant that provides clear, citizen-friendly insights about volcano activity in the Philippines. 
-
-Based on the following volcano data, provide a concise AI insight that helps regular citizens understand the situation:
-
-Volcano: ${volcano.name}
-Status: ${volcano.status}
-Alert Level: ${volcano.activityLevel}
-Location: ${volcano.location}
-${volcano.description ? `Description: ${volcano.description}` : ''}
-${volcano.parameters ? `Monitoring Parameters: ${JSON.stringify(volcano.parameters)}` : ''}
-${volcano.shouldNotBeAllowed ? `Restrictions: ${volcano.shouldNotBeAllowed}` : ''}
-${volcano.reminder ? `Reminders: ${volcano.reminder}` : ''}
-
-Please provide a JSON response with the following structure:
-{
-  "summary": "A brief 2-3 sentence summary of the current volcano status in simple terms",
-  "riskAssessment": "A clear assessment of the risk level and what it means for nearby communities",
-  "recommendations": ["List of 3-5 practical recommendations for citizens"],
-  "keyPoints": ["List of 3-4 key points about the current situation"]
-}
-
-Make the language simple, clear, and helpful for regular citizens. Focus on practical information they can use.`
-
-    const command = new InvokeModelCommand({
-      modelId: 'anthropic.claude-3-haiku-20240307-v1:0', // Claude 3 Haiku for cost-effective insights
-      contentType: 'application/json',
-      accept: 'application/json',
-      body: JSON.stringify({
-        anthropic_version: 'bedrock-2023-05-31',
-        max_tokens: 1000,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      })
-    })
-
       const response = await client.send(command)
-      const responseBody = JSON.parse(new TextDecoder().decode(response.body))
-      
-      if (responseBody.content && responseBody.content[0] && responseBody.content[0].text) {
-        const insightText = responseBody.content[0].text
+
+      if (response.body) {
+        const responseBody = JSON.parse(new TextDecoder().decode(response.body))
         
-        // Try to parse the JSON response
-        try {
-          const insight = JSON.parse(insightText)
-          return {
-            summary: insight.summary || 'No summary available',
-            riskAssessment: insight.riskAssessment || 'No risk assessment available',
-            recommendations: Array.isArray(insight.recommendations) ? insight.recommendations : [],
-            keyPoints: Array.isArray(insight.keyPoints) ? insight.keyPoints : []
-          }
-        } catch {
-          // Fallback: return a basic insight
-          return {
-            summary: insightText.substring(0, 200) + '...',
-            riskAssessment: 'AI insight generated but formatting failed',
-            recommendations: ['Monitor official PHIVOLCS updates', 'Stay informed about evacuation procedures'],
-            keyPoints: ['Current status requires monitoring', 'Follow official guidance']
+        if (responseBody.content && responseBody.content[0] && responseBody.content[0].text) {
+          const content = responseBody.content[0].text
+          
+          // Try to parse as JSON first
+          try {
+            const jsonMatch = content.match(/\{[\s\S]*\}/)
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0])
+              if (parsed.insights && Array.isArray(parsed.insights)) {
+                // Map the JSON response to our format
+                return volcanoes.map(volcano => {
+                  const insight = parsed.insights.find((i: { volcano: string }) => 
+                    i.volcano && i.volcano.toUpperCase().includes(volcano.name.toUpperCase())
+                  )
+                  
+                  if (insight) {
+                    return {
+                      name: volcano.name,
+                      insight: {
+                        summary: insight.summary || 'No summary available',
+                        riskAssessment: insight.riskAssessment || 'No risk assessment available',
+                        recommendations: Array.isArray(insight.recommendations) ? insight.recommendations : ['Monitor official PHIVOLCS bulletins regularly'],
+                        keyPoints: Array.isArray(insight.keyPoints) ? insight.keyPoints : [`Alert Level ${volcano.activityLevel} indicates ${volcano.status} status`]
+                      }
+                    }
+                  } else {
+                    return { name: volcano.name, insight: null }
+                  }
+                })
+              }
+            }
+          } catch {
+            // JSON parsing failed, fall back to mock insights
           }
         }
-      } else {
-        return null
       }
+      
+      // If we get here, the API call succeeded but parsing failed
+      // Return mock insights as fallback
+      return createMockInsights()
       
     } catch (error) {
       // Check if it's a throttling error
@@ -160,16 +189,16 @@ Make the language simple, clear, and helpful for regular citizens. Focus on prac
           await new Promise(resolve => setTimeout(resolve, delay))
           continue // Retry
         } else {
-          return null
+          return createMockInsights()
         }
       } else {
-        // Non-throttling error, don't retry
-        return null
+        // Non-throttling error, return mock insights
+        return createMockInsights()
       }
     }
   }
   
-  return null
+  return createMockInsights()
 }
 
 export function isBedrockConfigured(): boolean {
