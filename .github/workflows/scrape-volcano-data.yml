@@ -69,12 +69,12 @@ jobs:
       - name: Trigger volcano data scraping
         id: scrape
         run: |
-          echo "🚀 Triggering volcano data scraping on ${{ steps.env-url.outputs.url }}"
+          echo "🚀 Triggering PHIVOLCS data scraping on ${{ steps.env-url.outputs.url }}"
           
           # Make the scraping request
           response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}/api/volcanoes/scrape" \
             -H "User-Agent: GitHub-Actions-Volcano-Scraper/1.0" \
-            --max-time 300)
+            --max-time 60)
           
           # Extract response body and status code
           http_code=$(echo "$response" | tail -n1)
@@ -85,13 +85,43 @@ jobs:
           
           # Check if the request was successful
           if [ "$http_code" -eq 200 ]; then
-            echo "✅ Volcano data scraping completed successfully"
+            echo "✅ PHIVOLCS data scraping completed successfully"
             echo "success=true" >> $GITHUB_OUTPUT
             echo "message=Scraping completed successfully" >> $GITHUB_OUTPUT
           else
-            echo "❌ Volcano data scraping failed with status $http_code"
+            echo "❌ PHIVOLCS data scraping failed with status $http_code"
             echo "success=false" >> $GITHUB_OUTPUT
             echo "message=Scraping failed with status $http_code" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Generate AI insights
+        id: generate-insights
+        if: steps.scrape.outputs.success == 'true'
+        run: |
+          echo "🤖 Generating AI insights for volcanoes..."
+          
+          # Make the AI insights generation request
+          response=$(curl -s -w "\n%{http_code}" "${{ steps.env-url.outputs.url }}/api/volcanoes/generate-insights" \
+            -H "User-Agent: GitHub-Actions-AI-Generator/1.0" \
+            --max-time 120)
+          
+          # Extract response body and status code
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          echo "📊 Response Status: $http_code"
+          echo "📄 Response Body: $response_body"
+          
+          # Check if the request was successful
+          if [ "$http_code" -eq 200 ]; then
+            insights_count=$(echo "$response_body" | jq -r '.aiInsightsGenerated' 2>/dev/null || echo "0")
+            echo "✅ AI insights generated successfully: $insights_count insights"
+            echo "success=true" >> $GITHUB_OUTPUT
+            echo "insights_count=$insights_count" >> $GITHUB_OUTPUT
+          else
+            echo "❌ AI insights generation failed with status $http_code"
+            echo "success=false" >> $GITHUB_OUTPUT
             exit 1
           fi
 
@@ -129,8 +159,14 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Target URL:** ${{ steps.env-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Step 1: PHIVOLCS Scraping" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ steps.scrape.outputs.success == 'true' && '✅ Success' || '❌ Failed' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Message:** ${{ steps.scrape.outputs.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Step 2: AI Insights Generation" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ steps.generate-insights.outputs.success == 'true' && '✅ Success' || '⏭️ Skipped/Failed' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Insights Generated:** ${{ steps.generate-insights.outputs.insights_count || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY

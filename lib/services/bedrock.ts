@@ -141,8 +141,8 @@ Make the language simple, clear, and helpful for regular citizens. Focus on prac
       // Check if it's a throttling error
       if (error instanceof Error && error.message.includes('Too many requests')) {
         if (attempt < maxRetries) {
-          // Custom exponential backoff: 7s, 14s, 30s
-          const delays = [7000, 14000, 30000]
+          // Custom exponential backoff: 6s, 12s, 24s
+          const delays = [6000, 12000, 24000]
           const delay = delays[attempt - 1]
           await new Promise(resolve => setTimeout(resolve, delay))
           continue // Retry

@@ -113,16 +113,32 @@ jobs:
       - name: Trigger scraping if data is stale
         if: steps.check-freshness.outputs.fresh == 'false'
         run: |
-          echo "🔄 Data is stale, triggering scraping..."
+          echo "🔄 Data is stale, triggering PHIVOLCS scraping..."
           
           response=$(curl -s -w "\n%{http_code}" "https://ph-hazard.zedxperts.com/api/volcanoes/scrape" \
             -H "User-Agent: GitHub-Actions-Volcano-Monitor/1.0" \
-            --max-time 300)
+            --max-time 60)
           
           http_code=$(echo "$response" | tail -n1)
           
           if [ "$http_code" -eq 200 ]; then
-            echo "✅ Scraping triggered successfully"
+            echo "✅ PHIVOLCS scraping triggered successfully"
+            
+            # Now trigger AI insights generation
+            echo "🤖 Generating AI insights..."
+            
+            insights_response=$(curl -s -w "\n%{http_code}" "https://ph-hazard.zedxperts.com/api/volcanoes/generate-insights" \
+              -H "User-Agent: GitHub-Actions-Volcano-Monitor/1.0" \
+              --max-time 120)
+            
+            insights_http_code=$(echo "$insights_response" | tail -n1)
+            
+            if [ "$insights_http_code" -eq 200 ]; then
+              echo "✅ AI insights generated successfully"
+            else
+              echo "⚠️ AI insights generation failed: HTTP $insights_http_code"
+              # Don't fail the job, scraping was successful
+            fi
           else
             echo "❌ Failed to trigger scraping: HTTP $http_code"
             exit 1
