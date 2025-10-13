@@ -20,24 +20,24 @@ const createS3Client = () => {
   
   // Check if we have explicit credentials (for local development)
   // Support multiple credential formats: PH_HAZARD_S3_*, AWS_*, and S3_*
+  // Note: In Amplify, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY might be set automatically by the IAM role
   const hasExplicitCredentials = !!(
     (process.env.PH_HAZARD_S3_ACCESS_KEY_ID && process.env.PH_HAZARD_S3_SECRET_ACCESS_KEY) ||
-    (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
     (process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY)
   )
   
+  // Check if we're in Amplify (AWS_ACCESS_KEY_ID might be set by IAM role, but we should still use default credential chain)
+  const isAmplifyEnvironment = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && !process.env.PH_HAZARD_S3_ACCESS_KEY_ID && !process.env.S3_ACCESS_KEY_ID
+  
   console.log(`  - Has explicit credentials: ${hasExplicitCredentials}`)
+  console.log(`  - Is Amplify environment: ${isAmplifyEnvironment}`)
   
   if (hasExplicitCredentials) {
     console.log('🔑 Using explicit S3 credentials for local development')
     
-    // Use credentials in priority order: PH_HAZARD_S3_* > AWS_* > S3_*
-    const accessKeyId = process.env.PH_HAZARD_S3_ACCESS_KEY_ID || 
-                       process.env.AWS_ACCESS_KEY_ID || 
-                       process.env.S3_ACCESS_KEY_ID!
-    const secretAccessKey = process.env.PH_HAZARD_S3_SECRET_ACCESS_KEY || 
-                           process.env.AWS_SECRET_ACCESS_KEY || 
-                           process.env.S3_SECRET_ACCESS_KEY!
+    // Use credentials in priority order: PH_HAZARD_S3_* > S3_*
+    const accessKeyId = process.env.PH_HAZARD_S3_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY_ID!
+    const secretAccessKey = process.env.PH_HAZARD_S3_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY!
     
     return new S3Client({
       region,
@@ -45,6 +45,12 @@ const createS3Client = () => {
         accessKeyId,
         secretAccessKey
       }
+    })
+  } else if (isAmplifyEnvironment) {
+    console.log('🏷️ Using default credential chain (IAM role for Amplify) - ignoring auto-set AWS credentials')
+    return new S3Client({
+      region
+      // No explicit credentials - uses default credential chain (IAM role)
     })
   } else {
     console.log('🏷️ Using default credential chain (IAM role for Amplify)')
@@ -188,9 +194,11 @@ export function isS3Configured(): boolean {
   // Check if we have credentials (either explicit or via IAM role)
   const hasExplicitCredentials = !!(
     (process.env.PH_HAZARD_S3_ACCESS_KEY_ID && process.env.PH_HAZARD_S3_SECRET_ACCESS_KEY) ||
-    (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) ||
     (process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY)
   )
+  
+  // Check if we're in Amplify (AWS_ACCESS_KEY_ID might be set by IAM role, but we should still use default credential chain)
+  const isAmplifyEnvironment = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && !process.env.PH_HAZARD_S3_ACCESS_KEY_ID && !process.env.S3_ACCESS_KEY_ID
   
   // For local development: need explicit credentials
   // For Amplify deployment: IAM role provides credentials automatically
@@ -200,6 +208,7 @@ export function isS3Configured(): boolean {
   console.log(`  - Bucket configured: ${bucketConfigured} (${BUCKET_NAME})`)
   console.log(`  - Region configured: ${regionConfigured}`)
   console.log(`  - Has explicit credentials: ${hasExplicitCredentials}`)
+  console.log(`  - Is Amplify environment: ${isAmplifyEnvironment}`)
   console.log(`  - Is local development: ${isLocalDevelopment}`)
   
   if (isLocalDevelopment) {

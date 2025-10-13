@@ -1,0 +1,25 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing dependencies..."
+        - npm ci --cache .npm --prefer-offline
+    build:
+      commands:
+        - echo "Building the app..."
+        - echo "Environment variables available:"
+        - echo "S3_BUCKET_NAME: $S3_BUCKET_NAME"
+        - echo "S3_REGION: $S3_REGION"
+        - echo "AWS_REGION: $AWS_REGION"
+        - echo "NODE_ENV: $NODE_ENV"
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
+      - .npm/**/*
