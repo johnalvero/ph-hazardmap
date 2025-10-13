@@ -17,7 +17,6 @@ interface FilterPanelProps {
 export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   
-  console.log('FilterPanel render - isCollapsed:', isCollapsed)
 
   const updateFilters = (updates: Partial<FilterState>) => {
     onFilterChange({ ...filters, ...updates })
@@ -36,7 +35,6 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
       <div className="absolute top-20 left-4 z-[100]">
         <Button
           onClick={() => {
-            console.log('Open button clicked, setting isCollapsed to false')
             setIsCollapsed(false)
           }}
           size="lg"
@@ -64,7 +62,6 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
               size="sm"
               className="h-8 w-8 p-0 hover:bg-accent transition-all duration-200"
               onClick={() => {
-                console.log('Close button clicked, setting isCollapsed to true')
                 setIsCollapsed(true)
               }}
             >

@@ -10,7 +10,6 @@ export async function GET() {
     // Check in-memory cache first (L1 - fastest)
     const cachedVolcanoes = getVolcanoesFromCache()
     if (cachedVolcanoes && cachedVolcanoes.length > 0) {
-      console.log('📦 Serving volcano data from in-memory cache')
       return NextResponse.json({
         volcanoes: cachedVolcanoes,
         metadata: {
@@ -30,7 +29,6 @@ export async function GET() {
           // Update in-memory cache
           setVolcanoesInCache(s3Data.data)
           
-          console.log('☁️ Serving volcano data from S3')
           return NextResponse.json({
             volcanoes: s3Data.data,
             metadata: {
@@ -45,11 +43,9 @@ export async function GET() {
         console.error('❌ Error fetching from S3:', error)
       }
     } else {
-      console.log('⚠️ S3 not configured, skipping S3 fetch')
     }
 
     // No data available
-    console.log('📭 No volcano data available')
     return NextResponse.json({
       volcanoes: [],
       metadata: {

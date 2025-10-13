@@ -110,7 +110,6 @@ export async function loadPhilippineFaultLines(): Promise<FaultLine[]> {
       slipType: feature.properties.slip_type
     }))
     
-    console.log(`✅ Loaded ${cachedFaultLines.length} fault lines from GEM Global Active Faults Database`)
     return cachedFaultLines
   } catch (error) {
     console.error('Error loading fault data:', error)

@@ -62,7 +62,6 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
         const data = await response.json()
         setEarthquakes(data.earthquakes)
         
-        console.log(`Loaded ${data.earthquakes.length} earthquakes from ${data.metadata.source}`)
       } catch (err) {
         console.error('Error fetching earthquakes:', err)
         setError(err instanceof Error ? err.message : 'Failed to load earthquakes')
@@ -101,7 +100,6 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
         const data = await response.json()
         setVolcanoes(data.volcanoes)
         
-        console.log(`Loaded ${data.volcanoes.length} volcanoes from ${data.metadata.source} (cache: ${data.metadata.cache})`)
       } catch (err) {
         console.error('Error fetching volcanoes:', err)
         setError(err instanceof Error ? err.message : 'Failed to load volcanoes')

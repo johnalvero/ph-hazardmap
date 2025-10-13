@@ -109,7 +109,6 @@ export async function fetchUSGSEarthquakes(
   try {
     const url = `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${magnitude}_${timeframe}.geojson`
     
-    console.log(`Fetching earthquakes from USGS: ${url}`)
     
     const response = await fetch(url, {
       next: { revalidate: 300 } // Cache for 5 minutes
@@ -121,7 +120,6 @@ export async function fetchUSGSEarthquakes(
 
     const data: USGSResponse = await response.json()
     
-    console.log(`Fetched ${data.features.length} earthquakes from USGS`)
 
     // Transform and filter earthquakes
     const earthquakes = data.features
@@ -166,7 +164,6 @@ export async function fetchUSGSEarthquakesByRegion(
 
     const url = `${baseUrl}?${params.toString()}`
     
-    console.log(`Fetching earthquakes by region: ${url}`)
 
     const response = await fetch(url, {
       next: { revalidate: 300 }
