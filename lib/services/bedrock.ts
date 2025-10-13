@@ -66,7 +66,6 @@ export async function generateVolcanoInsight(volcano: {
 
   // Exponential backoff retry logic
   const maxRetries = 3
-  const baseDelay = 10000 // 10 seconds base delay
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -142,7 +141,9 @@ Make the language simple, clear, and helpful for regular citizens. Focus on prac
       // Check if it's a throttling error
       if (error instanceof Error && error.message.includes('Too many requests')) {
         if (attempt < maxRetries) {
-          const delay = baseDelay * Math.pow(2, attempt - 1) // Exponential backoff: 10s, 20s, 40s
+          // Custom exponential backoff: 7s, 14s, 30s
+          const delays = [7000, 14000, 30000]
+          const delay = delays[attempt - 1]
           await new Promise(resolve => setTimeout(resolve, delay))
           continue // Retry
         } else {

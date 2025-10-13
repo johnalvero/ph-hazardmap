@@ -45,9 +45,9 @@ export async function GET() {
           // Continue with other volcanoes even if one fails
         }
         
-        // Add a longer delay to avoid rate limiting (10 seconds)
+        // Add a longer delay to avoid rate limiting (7 seconds)
         if (i < volcanoes.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 10000))
+          await new Promise(resolve => setTimeout(resolve, 7000))
         }
       }
       
