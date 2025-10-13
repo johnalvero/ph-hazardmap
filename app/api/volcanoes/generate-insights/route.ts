@@ -42,7 +42,12 @@ export async function GET() {
         success: false,
         message: 'Bedrock is not configured',
         count: volcanoes.length,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        debug: {
+          hasAccessKey: !!process.env.S3_ACCESS_KEY_ID,
+          hasSecretKey: !!process.env.S3_SECRET_ACCESS_KEY,
+          region: process.env.AWS_REGION || process.env.S3_REGION || 'not set'
+        }
       }, { status: 500 })
     }
 
@@ -63,8 +68,10 @@ export async function GET() {
         } else {
           volcanoesWithInsights.push(volcano)
         }
-      } catch {
+      } catch (error) {
         volcanoesWithInsights.push(volcano)
+        // Log the error for debugging
+        console.error(`Failed to generate AI insight for ${volcano.name}:`, error)
         // Continue with other volcanoes even if one fails
       }
       
