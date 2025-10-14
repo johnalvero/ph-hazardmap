@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronUp, Info } from 'lucide-react'
+import { ChevronUp, Info } from 'lucide-react'
 
 interface MapLegendProps {
   isCollapsed: boolean
@@ -15,18 +15,17 @@ export function MapLegend({ isCollapsed, onToggle }: MapLegendProps) {
     return (
       <Button
         onClick={onToggle}
-        size="lg"
-        className="shadow-lg h-12 w-auto px-4 bg-primary text-primary-foreground border border-primary/20 hover:bg-primary/90 transition-all duration-200"
+        size="sm"
+        className="shadow-lg h-10 w-10 p-0 bg-primary/90 backdrop-blur-sm text-primary-foreground border border-primary/30 hover:bg-primary hover:scale-105 transition-all duration-200 rounded-full"
+        title="Open Legend"
       >
-        <Info className="h-4 w-4 mr-2" />
-        <span className="text-sm font-medium">Legend</span>
-        <ChevronDown className="h-4 w-4 ml-2" />
+        <Info className="h-4 w-4" />
       </Button>
     )
   }
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-xl border-0 bg-background/95 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm">Legend</CardTitle>

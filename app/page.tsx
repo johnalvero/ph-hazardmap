@@ -62,7 +62,7 @@ export default function Home() {
         )}
 
         {/* Map Legend - Bottom Right */}
-        <div className="absolute bottom-4 right-4 z-10 hidden md:block">
+        <div className="absolute bottom-4 right-4 z-10">
           <MapLegend 
             isCollapsed={isLegendCollapsed}
             onToggle={() => setIsLegendCollapsed(!isLegendCollapsed)}

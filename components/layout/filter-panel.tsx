@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
-import { Filter, ChevronDown, ChevronUp, Clock } from 'lucide-react'
+import { Filter, ChevronUp, Clock } from 'lucide-react'
 
 interface FilterPanelProps {
   filters: FilterState
@@ -32,17 +32,16 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
 
   if (isCollapsed) {
     return (
-      <div className="absolute top-20 left-4 z-[100]">
+      <div className="absolute top-4 left-4 z-[100]">
         <Button
           onClick={() => {
             setIsCollapsed(false)
           }}
-          size="lg"
-          className="shadow-lg h-12 w-auto px-4 bg-primary text-primary-foreground border border-primary/20 hover:bg-primary/90 transition-all duration-200"
+          size="sm"
+          className="shadow-lg h-10 w-10 p-0 bg-primary/90 backdrop-blur-sm text-primary-foreground border border-primary/30 hover:bg-primary hover:scale-105 transition-all duration-200 rounded-full"
+          title="Open Filters"
         >
-          <Filter className="h-4 w-4 mr-2" />
-          <span className="text-sm font-medium">Filters</span>
-          <ChevronDown className="h-4 w-4 ml-2" />
+          <Filter className="h-4 w-4" />
         </Button>
       </div>
     )
@@ -50,7 +49,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
 
   return (
     <div className="absolute top-4 left-4 z-10 w-full sm:w-80 max-w-md px-4 sm:px-0 max-h-[calc(100vh-8rem)] overflow-y-auto">
-      <Card className="shadow-lg">
+      <Card className="shadow-xl border-0 bg-background/95 backdrop-blur-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
