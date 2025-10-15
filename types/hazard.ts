@@ -82,7 +82,7 @@ export type HazardEvent = Earthquake | Volcano | Typhoon
 
 export interface FilterState {
   hazardTypes: HazardType[]
-  daysAgo: number // Number of days ago to fetch data (0-30)
+  daysAgo: number // Number of days ago to fetch data (1-30)
   magnitudeRange: {
     min: number
     max: number

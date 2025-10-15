@@ -15,6 +15,32 @@ export function formatDate(date: string | Date): string {
   }).format(new Date(date))
 }
 
+export function formatDateWithTimezone(date: string | Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  }).format(new Date(date))
+}
+
+export function formatEarthquakeTime(date: string | Date): string {
+  const dateObj = new Date(date)
+  
+  const localTime = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  }).format(dateObj)
+  
+  return localTime
+}
+
 export function formatDistance(distance: number): string {
   return `${distance.toFixed(2)} km`
 }

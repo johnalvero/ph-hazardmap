@@ -118,22 +118,18 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Days Ago:</label>
-                <span className="text-xs font-medium">
-                  {filters.daysAgo === 0 ? 'Today' : 
-                   filters.daysAgo === 1 ? '1 day ago' : 
-                   `${filters.daysAgo} days ago`}
-                </span>
+                <span className="text-xs font-medium">{filters.daysAgo} {filters.daysAgo === 1 ? 'day' : 'days'}</span>
               </div>
               <Slider
                 value={[filters.daysAgo]}
                 onValueChange={(value) => updateFilters({ daysAgo: value[0] })}
-                min={0}
+                min={1}
                 max={30}
                 step={1}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Today</span>
+                <span>1 day</span>
                 <span>30 days</span>
               </div>
             </div>

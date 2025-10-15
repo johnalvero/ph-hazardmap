@@ -26,8 +26,8 @@ export async function GET(request: Request) {
       })
     }
 
-    // Validate daysAgo parameter (0-30 days)
-    const days = Math.max(0, Math.min(30, daysAgo))
+    // Validate daysAgo parameter (1-30 days)
+    const days = Math.max(1, Math.min(30, daysAgo))
     
     // Convert magnitude filter to minimum magnitude
     const magnitudeToMin = {

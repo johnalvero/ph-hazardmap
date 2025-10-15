@@ -12,7 +12,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { X, ExternalLink, MapPin, Activity, Calendar, Layers } from 'lucide-react'
-import { formatDate, formatDistance, formatMagnitude, getAlertLevelColor } from '@/lib/utils'
+import { formatDateWithTimezone, formatEarthquakeTime, formatDistance, formatMagnitude, getAlertLevelColor } from '@/lib/utils'
 
 interface EventDetailsPanelProps {
   event: HazardEvent
@@ -115,7 +115,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                   <div className="flex-1">
                     <p className="text-sm font-medium">Time</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatDate(event.timestamp)}
+                      {formatEarthquakeTime(event.timestamp)}
                     </p>
                   </div>
                 </div>
@@ -191,7 +191,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                   <div className="flex-1">
                     <p className="text-sm font-medium">Last Update</p>
                     <p className="text-sm text-muted-foreground">
-                      {formatDate(event.timestamp)}
+                      {formatDateWithTimezone(event.timestamp)}
                     </p>
                   </div>
                 </div>
@@ -366,7 +366,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                         </TooltipContent>
                       </Tooltip>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(event.lastUpdate)}
+                        {formatDateWithTimezone(event.lastUpdate)}
                       </p>
                     </div>
                   </div>

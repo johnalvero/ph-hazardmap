@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { ChevronDown, ChevronUp, ExternalLink, MapPin, Activity, Calendar, Layers } from 'lucide-react'
-import { formatDate, formatDistance, formatMagnitude, getAlertLevelColor } from '@/lib/utils'
+import { formatDateWithTimezone, formatEarthquakeTime, formatDistance, formatMagnitude, getAlertLevelColor } from '@/lib/utils'
 
 interface MobileBottomSheetProps {
   event: HazardEvent | null
@@ -70,7 +70,7 @@ export function MobileBottomSheet({ event, onClose }: MobileBottomSheetProps) {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-muted-foreground">Time</p>
-                  <p className="font-medium">{formatDate(event.timestamp)}</p>
+                  <p className="font-medium text-xs">{formatEarthquakeTime(event.timestamp)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Depth</p>
@@ -126,7 +126,7 @@ export function MobileBottomSheet({ event, onClose }: MobileBottomSheetProps) {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Last Update</p>
-                  <p className="font-medium">{formatDate(event.timestamp)}</p>
+                  <p className="font-medium text-xs">{formatDateWithTimezone(event.timestamp)}</p>
                 </div>
               </div>
 
@@ -233,7 +233,7 @@ export function MobileBottomSheet({ event, onClose }: MobileBottomSheetProps) {
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-2 text-sm">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{formatDate(event.lastUpdate)}</span>
+                        <span className="font-medium text-xs">{formatDateWithTimezone(event.lastUpdate)}</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>
