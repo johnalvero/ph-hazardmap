@@ -37,7 +37,7 @@ export function Header() {
           <div>
             <h3 className="font-semibold mb-2">About PH Hazard Map</h3>
             <p className="text-muted-foreground mb-2">
-              PH Hazard Map provides real-time visualization of natural hazards including earthquakes and volcanic activity across the Pacific Ring of Fire region, with special focus on tsunami risk assessment for the Philippines. Volcano data includes AI-powered insights for citizen-friendly guidance.
+              PH Hazard Map provides real-time visualization of natural hazards including earthquakes, volcanic activity, and typhoons across the Pacific Ring of Fire region, with special focus on tsunami risk assessment for the Philippines. Volcano data includes AI-powered insights for citizen-friendly guidance.
             </p>
           </div>
           
@@ -46,6 +46,7 @@ export function Header() {
             <ul className="list-disc list-inside text-muted-foreground space-y-1">
               <li><strong>Earthquakes:</strong> USGS Pacific Ring of Fire (-10.0°N-50.0°N, 100.0°E-160.0°E)</li>
               <li><strong>Volcanoes:</strong> Real-time PHIVOLCS bulletins with AI insights</li>
+              <li><strong>Typhoons:</strong> NHC RSS Feeds (Atlantic & Eastern Pacific)</li>
               <li><strong>Fault Lines:</strong> GEM Global Active Faults (Scientific, peer-reviewed)</li>
             </ul>
           </div>
@@ -54,6 +55,17 @@ export function Header() {
             <p className="font-semibold text-blue-800 dark:text-blue-200 mb-1">🤖 AI-Powered Insights</p>
             <p className="text-blue-700 dark:text-blue-300">
               Volcano data is enhanced with AI-generated insights using AWS Bedrock (Claude 3 Haiku) to provide citizen-friendly explanations and recommendations.
+            </p>
+          </div>
+
+          <div className="p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded text-xs">
+            <p className="font-semibold text-orange-800 dark:text-orange-200 mb-1">🌀 Typhoon Data</p>
+            <p className="text-orange-700 dark:text-orange-300">
+              Real-time typhoon data from{' '}
+              <a href="https://www.nhc.noaa.gov/" target="_blank" rel="noopener noreferrer" className="underline font-semibold">
+                National Hurricane Center (NHC)
+              </a>
+              {' '}RSS feeds. Updates every 6 hours (00, 06, 12, 18 UTC). Covers Atlantic and Eastern Pacific basins.
             </p>
           </div>
 

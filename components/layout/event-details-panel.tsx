@@ -21,6 +21,8 @@ interface EventDetailsPanelProps {
 
 export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
   const isEarthquake = event.type === 'earthquake'
+  const isTyphoon = event.type === 'typhoon'
+  const isVolcano = event.type === 'volcano'
 
   const getMagnitudeColor = (magnitude: number) => {
     if (magnitude >= 7) return 'bg-red-500'
@@ -58,10 +60,10 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">
-                  {isEarthquake ? '🌎' : '🌋'}
+                  {isEarthquake ? '🌎' : isTyphoon ? '🌀' : '🌋'}
                 </span>
                 <CardTitle className="text-lg">
-                  {isEarthquake ? 'Earthquake' : event.name}
+                  {isEarthquake ? 'Earthquake' : isTyphoon ? event.name : event.name}
                 </CardTitle>
               </div>
               {isEarthquake && (
@@ -72,7 +74,17 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                   </span>
                 </div>
               )}
-              {!isEarthquake && (
+              {isTyphoon && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-lg px-3 py-1">
+                    {event.category}
+                  </Badge>
+                  <span className="text-xl font-bold">
+                    {event.windSpeed} kt
+                  </span>
+                </div>
+              )}
+              {isVolcano && (
                 <div className="flex items-center gap-2">
                   <div className={`h-3 w-3 rounded-full ${getAlertLevelColor(event.activityLevel)}`} />
                   <span className="text-2xl font-bold">
@@ -90,7 +102,7 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
             </Button>
           </div>
           <CardDescription>
-            {isEarthquake ? event.place : event.location}
+            {isEarthquake ? event.place : isTyphoon ? event.basin : event.location}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -159,6 +171,123 @@ export function EventDetailsPanel({ event, onClose }: EventDetailsPanelProps) {
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   View on USGS
+                </Button>
+              )}
+            </>
+          ) : isTyphoon ? (
+            <>
+              {/* Typhoon Details */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <Activity className="h-4 w-4 mt-1 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Status</p>
+                    <Badge variant="outline" className="mt-1">{event.status}</Badge>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 mt-1 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Last Update</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(event.timestamp)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 mt-1 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Current Position</p>
+                    <p className="text-sm text-muted-foreground font-mono">
+                      {event.coordinates[1].toFixed(2)}°N, {event.coordinates[0].toFixed(2)}°E
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Intensity */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold">Intensity</p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Wind Speed</p>
+                    <p className="font-medium">{event.windSpeed} kt ({event.windSpeedKph} km/h)</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Pressure</p>
+                    <p className="font-medium">{event.pressure} mb</p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Movement */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold">Movement</p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Direction</p>
+                    <p className="font-medium">{event.movementDirection}°</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Speed</p>
+                    <p className="font-medium">{event.movementSpeed} kt</p>
+                  </div>
+                </div>
+              </div>
+
+              {event.forecast && event.forecast.length > 0 && (
+                <>
+                  <Separator />
+                  
+                  {/* Forecast */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold">Forecast Track</p>
+                    <div className="space-y-2">
+                      {event.forecast.slice(0, 3).map((point, index) => (
+                        <div key={index} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded">
+                          <span className="text-muted-foreground">
+                            {new Date(point.timestamp).toLocaleDateString()} {new Date(point.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className="font-medium">{point.category} - {point.windSpeed} kt</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {event.warnings && event.warnings.length > 0 && (
+                <>
+                  <Separator />
+                  
+                  {/* Warnings */}
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-destructive">⚠️ Active Warnings</p>
+                    {event.warnings.map((warning, index) => (
+                      <div key={index} className="p-2 bg-destructive/10 border border-destructive/20 rounded text-sm">
+                        {warning}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <Separator />
+
+              {event.jtwcUrl && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.open(event.jtwcUrl, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View on JTWC
                 </Button>
               )}
             </>

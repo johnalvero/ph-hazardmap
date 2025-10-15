@@ -24,6 +24,7 @@ export function MobileBottomSheet({ event, onClose }: MobileBottomSheetProps) {
   if (!event) return null
 
   const isEarthquake = event.type === 'earthquake'
+  const isTyphoon = event.type === 'typhoon'
 
 
   const getStatusColor = (status: string) => {
@@ -47,13 +48,13 @@ export function MobileBottomSheet({ event, onClose }: MobileBottomSheetProps) {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{isEarthquake ? '🌎' : '🌋'}</span>
+          <span className="text-2xl">{isEarthquake ? '🌎' : isTyphoon ? '🌀' : '🌋'}</span>
           <div>
             <p className="font-semibold">
-              {isEarthquake ? `M ${formatMagnitude(event.magnitude)}` : event.name}
+              {isEarthquake ? `M ${formatMagnitude(event.magnitude)}` : isTyphoon ? event.name : event.name}
             </p>
             <p className="text-sm text-muted-foreground">
-              {isEarthquake ? event.place : event.location}
+              {isEarthquake ? event.place : isTyphoon ? event.basin : event.location}
             </p>
           </div>
         </div>
@@ -90,6 +91,80 @@ export function MobileBottomSheet({ event, onClose }: MobileBottomSheetProps) {
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   View Details
+                </Button>
+              )}
+            </div>
+          ) : isTyphoon ? (
+            <div className="space-y-4">
+              {/* Typhoon Mobile Details */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Category</p>
+                  <Badge variant="outline" className="mt-1">{event.category}</Badge>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <p className="font-medium">{event.status}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Wind Speed</p>
+                  <p className="font-medium">{event.windSpeed} kt ({event.windSpeedKph} km/h)</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Pressure</p>
+                  <p className="font-medium">{event.pressure} mb</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Movement</p>
+                  <p className="font-medium">{event.movementDirection}° at {event.movementSpeed} kt</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Last Update</p>
+                  <p className="font-medium">{formatDate(event.timestamp)}</p>
+                </div>
+              </div>
+
+              {event.forecast && event.forecast.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold">Forecast Track</p>
+                  <div className="space-y-2">
+                    {event.forecast.slice(0, 2).map((point, index) => (
+                      <div key={index} className="flex justify-between items-center text-xs p-2 bg-muted/50 rounded">
+                        <span className="text-muted-foreground">
+                          {new Date(point.timestamp).toLocaleDateString()}
+                        </span>
+                        <span className="font-medium">{point.category} - {point.windSpeed} kt</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {event.warnings && event.warnings.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-destructive">⚠️ Warnings</p>
+                  {event.warnings.map((warning, index) => (
+                    <div key={index} className="p-2 bg-destructive/10 border border-destructive/20 rounded text-xs">
+                      {warning}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {event.jtwcUrl && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.open(event.jtwcUrl, '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View on JTWC
                 </Button>
               )}
             </div>

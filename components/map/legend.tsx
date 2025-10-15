@@ -102,6 +102,48 @@ export function MapLegend({ isCollapsed, onToggle }: MapLegendProps) {
 
         <Separator />
 
+        {/* Typhoons */}
+        <div>
+          <p className="font-semibold mb-2">🌀 Typhoons</p>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#991B1B' }} />
+              <span>Cat 5 (Catastrophic)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#DC2626' }} />
+              <span>Cat 4 (Major)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#EF4444' }} />
+              <span>Cat 3 (Major)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#F97316' }} />
+              <span>Cat 2</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#F59E0B' }} />
+              <span>Cat 1</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#10B981' }} />
+              <span>Tropical Storm (TS)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#3B82F6' }} />
+              <span>Tropical Depression (TD)</span>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            • Dashed line = Forecast track<br />
+            • Circles = Wind radii (34kt, 50kt, 64kt)<br />
+            • Shaded area = Uncertainty cone
+          </p>
+        </div>
+
+        <Separator />
+
         {/* Fault Lines */}
         <div>
           <p className="font-semibold mb-2">⚠️ Fault Lines</p>

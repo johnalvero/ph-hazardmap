@@ -22,7 +22,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
     onFilterChange({ ...filters, ...updates })
   }
 
-  const toggleHazardType = (type: 'earthquake' | 'volcano') => {
+  const toggleHazardType = (type: 'earthquake' | 'volcano' | 'typhoon') => {
     const newTypes = filters.hazardTypes.includes(type)
       ? filters.hazardTypes.filter(t => t !== type)
       : [...filters.hazardTypes, type]
@@ -95,6 +95,16 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
                 onCheckedChange={() => toggleHazardType('volcano')}
               />
             </div>
+            <div className="flex items-center justify-between">
+              <label htmlFor="typhoon" className="text-sm">
+                🌀 Typhoons
+              </label>
+              <Switch
+                id="typhoon"
+                checked={filters.hazardTypes.includes('typhoon')}
+                onCheckedChange={() => toggleHazardType('typhoon')}
+              />
+            </div>
           </div>
 
           <Separator />
@@ -108,18 +118,22 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs text-muted-foreground">Days Ago:</label>
-                <span className="text-xs font-medium">{filters.daysAgo} {filters.daysAgo === 1 ? 'day' : 'days'}</span>
+                <span className="text-xs font-medium">
+                  {filters.daysAgo === 0 ? 'Today' : 
+                   filters.daysAgo === 1 ? '1 day ago' : 
+                   `${filters.daysAgo} days ago`}
+                </span>
               </div>
               <Slider
                 value={[filters.daysAgo]}
                 onValueChange={(value) => updateFilters({ daysAgo: value[0] })}
-                min={1}
+                min={0}
                 max={30}
                 step={1}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>1 day</span>
+                <span>Today</span>
                 <span>30 days</span>
               </div>
             </div>

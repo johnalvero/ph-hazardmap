@@ -4,10 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import Map, { Marker, Popup, NavigationControl, ScaleControl, FullscreenControl, Source, Layer } from 'react-map-gl'
 import type { LayerProps } from 'react-map-gl'
 import type mapboxgl from 'mapbox-gl'
-import { HazardEvent, FilterState, Earthquake } from '@/types/hazard'
+import { HazardEvent, FilterState, Earthquake, Typhoon } from '@/types/hazard'
 // Removed mockVolcanoes import - now fetching real data from API
 import { loadPhilippineFaultLines, faultLinesToGeoJSON, type FaultLine } from '@/lib/data/fault-lines'
 import { getAlertLevelColor } from '@/lib/utils'
+import { TyphoonMarker } from './typhoon-marker'
+import { TyphoonLayers } from './typhoon-layers'
 
 interface MapContainerProps {
   filters: FilterState
@@ -15,7 +17,7 @@ interface MapContainerProps {
   onEventSelect: (event: HazardEvent | null) => void
 }
 
-export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
+export function MapContainer({ filters, selectedEvent, onEventSelect }: MapContainerProps) {
   const mapRef = useRef(null)
   const [viewState, setViewState] = useState({
     longitude: 122.5,
@@ -31,6 +33,7 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
   } | null>(null)
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([])
   const [volcanoes, setVolcanoes] = useState<HazardEvent[]>([])
+  const [typhoons, setTyphoons] = useState<Typhoon[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [faultLines, setFaultLines] = useState<FaultLine[]>([])
@@ -114,10 +117,47 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
     }
   }, [filters.hazardTypes])
 
+  // Fetch typhoon data from API
+  useEffect(() => {
+    async function fetchTyphoons() {
+      try {
+        setError(null)
+        
+        const response = await fetch('/api/typhoons')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch typhoons')
+        }
+        
+        const data = await response.json()
+        setTyphoons(data.typhoons)
+        
+      } catch (err) {
+        console.error('Error fetching typhoons:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load typhoons')
+      }
+    }
+
+    // Only fetch and set up interval if typhoons are enabled
+    if (!filters.hazardTypes.includes('typhoon')) {
+      setTyphoons([])
+      return
+    }
+
+    // Initial fetch
+    fetchTyphoons()
+
+    // Refresh typhoon data every 5 minutes
+    const interval = setInterval(fetchTyphoons, 5 * 60 * 1000)
+    
+    return () => clearInterval(interval)
+  }, [filters.hazardTypes])
+
   // Combine and filter events
   const events: HazardEvent[] = [
     ...(filters.hazardTypes.includes('earthquake') ? earthquakes : []),
-    ...(filters.hazardTypes.includes('volcano') ? volcanoes : [])
+    ...(filters.hazardTypes.includes('volcano') ? volcanoes : []),
+    ...(filters.hazardTypes.includes('typhoon') ? typhoons : [])
   ].filter(event => {
     if (event.type === 'earthquake') {
       // Filter by magnitude
@@ -274,6 +314,11 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
           </Source>
         )}
 
+        {/* Typhoon Layers (forecast tracks, wind radii, uncertainty cones) */}
+        {filters.hazardTypes.includes('typhoon') && typhoons.length > 0 && (
+          <TyphoonLayers typhoons={typhoons} />
+        )}
+
         {/* Render earthquake markers */}
         {events.map(event => {
           if (event.type === 'earthquake') {
@@ -309,7 +354,7 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
                 </div>
               </Marker>
             )
-          } else {
+          } else if (event.type === 'volcano') {
             const color = getVolcanoColor(event.status)
             
             return (
@@ -342,7 +387,26 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
                 </div>
               </Marker>
             )
+          } else if (event.type === 'typhoon') {
+            return (
+              <Marker
+                key={event.id}
+                longitude={event.coordinates[0]}
+                latitude={event.coordinates[1]}
+                anchor="center"
+              >
+                <TyphoonMarker
+                  typhoon={event}
+                  onClick={(e) => {
+                    e?.stopPropagation()
+                    onEventSelect(event)
+                  }}
+                  isSelected={selectedEvent?.id === event.id}
+                />
+              </Marker>
+            )
           }
+          return null
         })}
 
         {/* Popup on hover for events */}
@@ -359,12 +423,23 @@ export function MapContainer({ filters, onEventSelect }: MapContainerProps) {
               <div className="font-semibold mb-1">
                 {popupInfo.type === 'earthquake' 
                   ? `M ${popupInfo.magnitude.toFixed(1)} Earthquake`
+                  : popupInfo.type === 'typhoon'
+                  ? popupInfo.name
                   : popupInfo.name
                 }
               </div>
               <div className="text-xs text-muted-foreground">
                 {popupInfo.type === 'earthquake' 
                   ? popupInfo.place
+                  : popupInfo.type === 'typhoon'
+                  ? (
+                    <div className="space-y-1">
+                      <div>{popupInfo.basin}</div>
+                      <div className="flex items-center gap-1">
+                        <span>{popupInfo.category} - {popupInfo.windSpeed} kt</span>
+                      </div>
+                    </div>
+                  )
                   : (
                     <div className="space-y-1">
                       <div>{popupInfo.location}</div>
