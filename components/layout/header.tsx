@@ -46,7 +46,7 @@ export function Header() {
             <ul className="list-disc list-inside text-muted-foreground space-y-1">
               <li><strong>Earthquakes:</strong> USGS Pacific Ring of Fire (-10.0°N-50.0°N, 100.0°E-160.0°E)</li>
               <li><strong>Volcanoes:</strong> Real-time PHIVOLCS bulletins with AI insights</li>
-              <li><strong>Typhoons:</strong> NHC RSS Feeds (Atlantic & Eastern Pacific)</li>
+              <li><strong>Typhoons:</strong> Active Tropical Cyclones Only</li>
               <li><strong>Fault Lines:</strong> GEM Global Active Faults (Scientific, peer-reviewed)</li>
             </ul>
           </div>

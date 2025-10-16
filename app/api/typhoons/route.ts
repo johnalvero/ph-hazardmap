@@ -25,12 +25,18 @@ export async function GET(request: Request) {
     return NextResponse.json({
       typhoons,
       metadata: {
-        source: 'NHC RSS Feeds (Atlantic & Eastern Pacific)',
+        source: 'Active Tropical Cyclones Only',
         basin,
         generated: new Date().toISOString(),
         count: typhoons.length,
-        updateFrequency: '6 hours (00, 06, 12, 18 UTC)',
-        mode: 'live'
+        updateFrequency: '5 minutes (real-time)',
+        mode: 'live',
+        dataSources: [
+          'NHC Atlantic & Eastern Pacific RSS',
+          'NOAA Weather Alerts API',
+          'National Weather Service'
+        ],
+        note: typhoons.length === 0 ? 'No active tropical cyclones at this time' : 'Showing active tropical cyclones only'
       }
     })
   } catch (error) {
