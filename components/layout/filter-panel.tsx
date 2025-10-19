@@ -30,6 +30,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
     updateFilters({ hazardTypes: newTypes })
   }
 
+
   if (isCollapsed) {
     return (
       <div className="absolute top-4 left-4 z-[100]">
@@ -190,15 +191,15 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
           <Button
             variant="outline"
             className="w-full"
-          onClick={() => {
-            updateFilters({
-              hazardTypes: ['earthquake', 'volcano', 'typhoon'],
-              daysAgo: 7,
-              magnitudeRange: { min: 0, max: 10 },
-              showMajorFaults: true,
-              showMinorFaults: false
-            })
-          }}
+        onClick={() => {
+          updateFilters({
+            hazardTypes: ['earthquake', 'volcano', 'typhoon'],
+            daysAgo: 7,
+            magnitudeRange: { min: 0, max: 10 },
+            showMajorFaults: true,
+            showMinorFaults: false
+          })
+        }}
           >
             Reset Filters
           </Button>

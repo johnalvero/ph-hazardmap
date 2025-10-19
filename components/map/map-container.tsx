@@ -425,12 +425,12 @@ export function MapContainer({ filters, selectedEvent, onEventSelect }: MapConta
             closeOnClick={false}
             className="hazard-popup"
           >
-            <div className="p-2 min-w-[200px]">
-              <div className="font-semibold mb-1">
+            <div className="p-3 min-w-[280px]">
+              <div className="font-semibold mb-2 text-base">
                 {popupInfo.type === 'earthquake' 
                   ? `M ${popupInfo.magnitude.toFixed(1)} Earthquake`
                   : popupInfo.type === 'typhoon'
-                  ? popupInfo.name
+                  ? `🌀 ${popupInfo.name}`
                   : popupInfo.name
                 }
               </div>
@@ -439,10 +439,31 @@ export function MapContainer({ filters, selectedEvent, onEventSelect }: MapConta
                   ? popupInfo.place
                   : popupInfo.type === 'typhoon'
                   ? (
-                    <div className="space-y-1">
-                      <div>{popupInfo.basin}</div>
-                      <div className="flex items-center gap-1">
-                        <span>{popupInfo.category} - {popupInfo.windSpeed} kt</span>
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-foreground">
+                        {popupInfo.basin}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Category:</span>
+                          <span className="text-xs font-semibold text-foreground">{popupInfo.category}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Wind Speed:</span>
+                          <span className="text-xs font-semibold text-foreground">{popupInfo.windSpeed} kt</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Pressure:</span>
+                          <span className="text-xs font-semibold text-foreground">{popupInfo.pressure} mb</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Movement:</span>
+                          <span className="text-xs font-semibold text-foreground">{popupInfo.movementSpeed} kt</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Status:</span>
+                          <span className="text-xs font-semibold text-foreground">{popupInfo.status}</span>
+                        </div>
                       </div>
                     </div>
                   )

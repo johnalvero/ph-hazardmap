@@ -179,8 +179,8 @@ async function fetchATCFBestTrackData(): Promise<Typhoon[]> {
             const parsedTyphoons = parseATCForecastData(forecastData, basin)
             typhoons.push(...parsedTyphoons)
             continue // Skip best track if we have forecast data
-          }
-        } catch {
+      }
+    } catch {
           // Request timed out, continue to next
           continue
         }
@@ -208,7 +208,7 @@ async function fetchATCFBestTrackData(): Promise<Typhoon[]> {
           continue
         }
       }
-    } catch (error) {
+  } catch (error) {
       console.log(`Error fetching ATCF data for Western Pacific basin:`, error)
     }
     
@@ -1720,13 +1720,13 @@ export function calculateUncertaintyCone(
       
       // Validate generated coordinates
       if (!isNaN(x) && !isNaN(y) && x >= -180 && x <= 180 && y >= -90 && y <= 90) {
-        points.push([x, y])
+      points.push([x, y])
       }
     }
     
     // Only add if we have valid points
     if (points.length >= 3) {
-      conePoints.push(points)
+    conePoints.push(points)
     }
   })
   

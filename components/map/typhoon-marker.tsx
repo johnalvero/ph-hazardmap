@@ -63,17 +63,6 @@ export function TyphoonMarker({ typhoon, onClick, isSelected }: TyphoonMarkerPro
         />
       </svg>
       
-      {/* Category label */}
-      <div
-        className="absolute -bottom-5 left-1/2 transform -translate-x-1/2 text-xs font-bold whitespace-nowrap px-2 py-0.5 rounded"
-        style={{
-          backgroundColor: color,
-          color: 'white',
-          fontSize: isSelected ? '11px' : '9px'
-        }}
-      >
-        {typhoon.name}
-      </div>
     </div>
   )
 }

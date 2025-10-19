@@ -80,9 +80,12 @@ export interface Typhoon {
 
 export type HazardEvent = Earthquake | Volcano | Typhoon
 
+export type TimeRangePreset = '24h' | '7d' | '30d' | 'custom'
+
 export interface FilterState {
   hazardTypes: HazardType[]
   daysAgo: number // Number of days ago to fetch data (1-30)
+  timeRangePreset?: TimeRangePreset // Quick time range presets (optional, used in dashboard)
   magnitudeRange: {
     min: number
     max: number
