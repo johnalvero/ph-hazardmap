@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { fetchPhilippineEarthquakes, type USGSMagnitude } from '@/lib/data/earthquakes'
-import { mockEarthquakes } from '@/lib/mock-data'
 
 // Force this route to be dynamic (uses query parameters)
 export const dynamic = 'force-dynamic'
@@ -11,20 +10,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const daysAgo = parseInt(searchParams.get('daysAgo') || '7')
     const magnitude = (searchParams.get('magnitude') || 'all') as USGSMagnitude
-    const useMock = searchParams.get('mock') === 'true'
-
-    // Allow fallback to mock data for development
-    if (useMock) {
-      return NextResponse.json({
-        earthquakes: mockEarthquakes,
-        metadata: {
-          source: 'Mock Data',
-          generated: new Date().toISOString(),
-          count: mockEarthquakes.length,
-          mode: 'mock'
-        }
-      })
-    }
+    // No mock data - only real-time sources
 
     // Validate daysAgo parameter (1-30 days)
     const days = Math.max(1, Math.min(30, daysAgo))
@@ -60,17 +46,17 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error in earthquakes API:', error)
     
-    // Fallback to mock data on error
+    // Return empty data on error - no mock data fallback
     return NextResponse.json({
-      earthquakes: mockEarthquakes,
+      earthquakes: [],
       metadata: {
-        source: 'Mock Data (Fallback)',
+        source: 'USGS Earthquake Hazards Program',
         generated: new Date().toISOString(),
-        count: mockEarthquakes.length,
-        mode: 'fallback',
+        count: 0,
+        mode: 'error',
         error: error instanceof Error ? error.message : 'Unknown error'
       }
-    }, { status: 200 }) // Return 200 with fallback data instead of error
+    }, { status: 500 })
   }
 }
 

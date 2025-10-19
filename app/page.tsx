@@ -14,7 +14,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false)
   const [isLegendCollapsed, setIsLegendCollapsed] = useState(true)
   const [filters, setFilters] = useState<FilterState>({
-    hazardTypes: ['earthquake', 'volcano'],
+    hazardTypes: ['earthquake', 'volcano', 'typhoon'], // Enable typhoons by default for Philippines
     daysAgo: 7, // Default to 7 days ago
     magnitudeRange: {
       min: 0,

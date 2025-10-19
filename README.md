@@ -18,6 +18,12 @@ An interactive platform that visualizes volcanoes, earthquakes, and other natura
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Styling
 - **shadcn/ui** - UI components
+
+## Security Notice
+
+⚠️ **IMPORTANT**: This repository contains no hardcoded secrets or API keys. All sensitive information is managed through environment variables. See `env.example` for required configuration.
+
+**Never commit `.env.local` or any files containing API keys to version control.**
 - **Mapbox GL JS** - Interactive maps
 
 ## Getting Started

@@ -10,66 +10,97 @@ interface TyphoonLayersProps {
 }
 
 export function TyphoonLayers({ typhoons }: TyphoonLayersProps) {
-  return (
-    <>
-      {typhoons.map((typhoon) => (
-        <TyphoonLayerGroup key={typhoon.id} typhoon={typhoon} />
-      ))}
-    </>
-  )
+  try {
+    return (
+      <>
+        {typhoons.map((typhoon) => (
+          <TyphoonLayerGroup key={typhoon.id} typhoon={typhoon} />
+        ))}
+      </>
+    )
+  } catch (error) {
+    console.error('Error rendering typhoon layers:', error)
+    return null
+  }
 }
 
 function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
-  const color = getTyphoonColor(typhoon.category)
-  
-  // Create forecast track GeoJSON
-  const forecastTrackGeoJSON = {
-    type: 'Feature' as const,
-    geometry: {
-      type: 'LineString' as const,
-      coordinates: [
-        typhoon.coordinates,
-        ...typhoon.forecast.map(f => f.coordinates)
-      ]
-    },
-    properties: {
-      name: typhoon.name,
-      category: typhoon.category
+  try {
+    // Validate typhoon data
+    if (!typhoon || !typhoon.coordinates || !Array.isArray(typhoon.coordinates) || typhoon.coordinates.length !== 2) {
+      console.warn('Invalid typhoon data:', typhoon)
+      return null
     }
-  }
-  
-  // Create forecast points GeoJSON
-  const forecastPointsGeoJSON = {
-    type: 'FeatureCollection' as const,
-    features: typhoon.forecast.map((point, index) => ({
+
+    const [lon, lat] = typhoon.coordinates
+    if (isNaN(lon) || isNaN(lat) || lon < -180 || lon > 180 || lat < -90 || lat > 90) {
+      console.warn('Invalid typhoon coordinates:', typhoon.coordinates)
+      return null
+    }
+
+    const color = getTyphoonColor(typhoon.category)
+    
+    // Validate forecast data
+    const validForecast = typhoon.forecast?.filter(f => 
+      f && 
+      f.coordinates && 
+      Array.isArray(f.coordinates) && 
+      f.coordinates.length === 2 &&
+      !isNaN(f.coordinates[0]) && 
+      !isNaN(f.coordinates[1])
+    ) || []
+
+    // Only create forecast layers if we have valid forecast data
+    const hasValidForecast = validForecast.length > 0
+
+    // Create forecast track GeoJSON (only if we have forecast data)
+    const forecastTrackGeoJSON = hasValidForecast ? {
       type: 'Feature' as const,
       geometry: {
-        type: 'Point' as const,
-        coordinates: point.coordinates
+        type: 'LineString' as const,
+        coordinates: [
+          typhoon.coordinates,
+          ...validForecast.map(f => f.coordinates)
+        ]
       },
       properties: {
-        hour: (index + 1) * 24,
-        category: point.category,
-        windSpeed: point.windSpeed
+        name: typhoon.name,
+        category: typhoon.category
       }
-    }))
-  }
-  
-  // Create uncertainty cone GeoJSON
-  const coneCoordinates = calculateUncertaintyCone(typhoon.forecast)
-  const uncertaintyConeGeoJSON = {
-    type: 'FeatureCollection' as const,
-    features: coneCoordinates.map((coords, index) => ({
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Polygon' as const,
-        coordinates: [coords]
-      },
-      properties: {
-        hour: (index + 1) * 24
-      }
-    }))
-  }
+    } : null
+    
+    // Create forecast points GeoJSON (only if we have forecast data)
+    const forecastPointsGeoJSON = hasValidForecast ? {
+      type: 'FeatureCollection' as const,
+      features: validForecast.map((point, index) => ({
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: point.coordinates
+        },
+        properties: {
+          hour: (index + 1) * 24,
+          category: point.category || typhoon.category,
+          windSpeed: point.windSpeed || typhoon.windSpeed
+        }
+      }))
+    } : null
+    
+    // Create uncertainty cone GeoJSON (only if we have forecast data)
+    const coneCoordinates = hasValidForecast ? calculateUncertaintyCone(validForecast) : []
+    const uncertaintyConeGeoJSON = coneCoordinates.length > 0 ? {
+      type: 'FeatureCollection' as const,
+      features: coneCoordinates.map((coords, index) => ({
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Polygon' as const,
+          coordinates: [coords]
+        },
+        properties: {
+          hour: (index + 1) * 24
+        }
+      }))
+    } : null
   
   // Create wind radii circles GeoJSON (simple point features)
   const windRadiiGeoJSON = {
@@ -81,12 +112,12 @@ function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
     properties: {}
   }
   
-  // Layer styles
+  // Layer styles with validation
   const uncertaintyConeLayer: LayerProps = {
     id: `uncertainty-cone-${typhoon.id}`,
     type: 'fill',
     paint: {
-      'fill-color': color,
+      'fill-color': color || '#FF0000',
       'fill-opacity': 0.1
     }
   }
@@ -95,7 +126,7 @@ function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
     id: `forecast-track-${typhoon.id}`,
     type: 'line',
     paint: {
-      'line-color': color,
+      'line-color': color || '#FF0000',
       'line-width': 3,
       'line-dasharray': [2, 2]
     }
@@ -105,7 +136,7 @@ function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
     id: `forecast-points-${typhoon.id}`,
     type: 'circle',
     paint: {
-      'circle-color': color,
+      'circle-color': color || '#FF0000',
       'circle-radius': 6,
       'circle-stroke-color': '#ffffff',
       'circle-stroke-width': 2
@@ -143,7 +174,7 @@ function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
     id: `wind-radii-34-${typhoon.id}`,
     type: 'circle',
     paint: {
-      'circle-radius': maxRadius34,
+      'circle-radius': Math.max(maxRadius34, 1), // Ensure minimum radius
       'circle-color': '#F59E0B',
       'circle-opacity': 0.15,
       'circle-stroke-color': '#F59E0B',
@@ -156,7 +187,7 @@ function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
     id: `wind-radii-50-${typhoon.id}`,
     type: 'circle',
     paint: {
-      'circle-radius': maxRadius50,
+      'circle-radius': Math.max(maxRadius50, 1), // Ensure minimum radius
       'circle-color': '#F97316',
       'circle-opacity': 0.2,
       'circle-stroke-color': '#F97316',
@@ -169,7 +200,7 @@ function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
     id: `wind-radii-64-${typhoon.id}`,
     type: 'circle',
     paint: {
-      'circle-radius': maxRadius64,
+      'circle-radius': Math.max(maxRadius64, 1), // Ensure minimum radius
       'circle-color': '#EF4444',
       'circle-opacity': 0.25,
       'circle-stroke-color': '#EF4444',
@@ -180,14 +211,16 @@ function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
   
   return (
     <>
-      {/* Uncertainty Cone */}
-      <Source
-        id={`uncertainty-cone-source-${typhoon.id}`}
-        type="geojson"
-        data={uncertaintyConeGeoJSON}
-      >
-        <Layer {...uncertaintyConeLayer} />
-      </Source>
+      {/* Uncertainty Cone - Only render if we have valid forecast data */}
+      {uncertaintyConeGeoJSON && (
+        <Source
+          id={`uncertainty-cone-source-${typhoon.id}`}
+          type="geojson"
+          data={uncertaintyConeGeoJSON}
+        >
+          <Layer {...uncertaintyConeLayer} />
+        </Source>
+      )}
       
       {/* Wind Radii - 34kt (outermost) */}
       {typhoon.windRadii?.radius34kt && (
@@ -222,24 +255,32 @@ function TyphoonLayerGroup({ typhoon }: { typhoon: Typhoon }) {
         </Source>
       )}
       
-      {/* Forecast Track Line */}
-      <Source
-        id={`forecast-track-source-${typhoon.id}`}
-        type="geojson"
-        data={forecastTrackGeoJSON}
-      >
-        <Layer {...forecastTrackLayer} />
-      </Source>
+      {/* Forecast Track Line - Only render if we have valid forecast data */}
+      {forecastTrackGeoJSON && (
+        <Source
+          id={`forecast-track-source-${typhoon.id}`}
+          type="geojson"
+          data={forecastTrackGeoJSON}
+        >
+          <Layer {...forecastTrackLayer} />
+        </Source>
+      )}
       
-      {/* Forecast Points */}
-      <Source
-        id={`forecast-points-source-${typhoon.id}`}
-        type="geojson"
-        data={forecastPointsGeoJSON}
-      >
-        <Layer {...forecastPointsLayer} />
-      </Source>
+      {/* Forecast Points - Only render if we have valid forecast data */}
+      {forecastPointsGeoJSON && (
+        <Source
+          id={`forecast-points-source-${typhoon.id}`}
+          type="geojson"
+          data={forecastPointsGeoJSON}
+        >
+          <Layer {...forecastPointsLayer} />
+        </Source>
+      )}
     </>
   )
+  } catch (error) {
+    console.error('Error rendering typhoon layer group:', error)
+    return null
+  }
 }
 

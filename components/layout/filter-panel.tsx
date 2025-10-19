@@ -192,7 +192,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
             className="w-full"
           onClick={() => {
             updateFilters({
-              hazardTypes: ['earthquake', 'volcano'],
+              hazardTypes: ['earthquake', 'volcano', 'typhoon'],
               daysAgo: 7,
               magnitudeRange: { min: 0, max: 10 },
               showMajorFaults: true,

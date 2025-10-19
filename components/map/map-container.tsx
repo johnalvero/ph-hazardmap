@@ -22,7 +22,9 @@ export function MapContainer({ filters, selectedEvent, onEventSelect }: MapConta
   const [viewState, setViewState] = useState({
     longitude: 122.5,
     latitude: 12.8,
-    zoom: 5
+    zoom: 5,
+    pitch: 0,
+    bearing: 0
   })
   const [popupInfo, setPopupInfo] = useState<HazardEvent | null>(null)
   const [faultPopup, setFaultPopup] = useState<{
@@ -129,8 +131,8 @@ export function MapContainer({ filters, selectedEvent, onEventSelect }: MapConta
           throw new Error('Failed to fetch typhoons')
         }
         
-        const data = await response.json()
-        setTyphoons(data.typhoons)
+          const data = await response.json()
+          setTyphoons(data.typhoons)
         
       } catch (err) {
         console.error('Error fetching typhoons:', err)
@@ -294,6 +296,10 @@ export function MapContainer({ filters, selectedEvent, onEventSelect }: MapConta
         ]}
         onMouseMove={(filters.showMajorFaults || filters.showMinorFaults) ? onFaultHover : undefined}
         onMouseLeave={(filters.showMajorFaults || filters.showMinorFaults) ? onFaultLeave : undefined}
+        onError={(error) => {
+          console.error('Map error:', error)
+          setError('Map rendering error. Please refresh the page.')
+        }}
       >
         {/* Navigation Controls */}
         <NavigationControl position="top-right" />
