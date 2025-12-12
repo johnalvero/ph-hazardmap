@@ -21,7 +21,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 mb-3">1. Information We Collect</h2>
               <p className="mb-3">
-                PH Hazard Map is committed to protecting your privacy. We collect minimal information necessary to provide our services:
+                PHLindol is committed to protecting your privacy. We collect minimal information necessary to provide our services:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Location data (only when you interact with the map)</li>

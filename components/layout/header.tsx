@@ -14,7 +14,7 @@ export function Header() {
         <div className="flex items-center gap-3">
           <Mountain className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-xl font-bold text-foreground">PH Hazard Map</h1>
+            <h1 className="text-xl font-bold text-foreground">PHLindol</h1>
             <p className="text-xs text-muted-foreground hidden sm:block">
               Real-time hazard monitoring for safer communities
             </p>
@@ -63,9 +63,9 @@ export function Header() {
       {showInfo && (
         <div className="mt-4 p-4 bg-muted rounded-lg text-sm space-y-3">
           <div>
-            <h3 className="font-semibold mb-2">About PH Hazard Map</h3>
+            <h3 className="font-semibold mb-2">About PHLindol</h3>
             <p className="text-muted-foreground mb-2">
-              PH Hazard Map provides real-time visualization of natural hazards including earthquakes, volcanic activity, and typhoons across the Pacific Ring of Fire region, with special focus on tsunami risk assessment for the Philippines. Volcano data includes AI-powered insights for citizen-friendly guidance.
+              PHLindol provides real-time visualization of natural hazards including earthquakes, volcanic activity, and typhoons across the Pacific Ring of Fire region, with special focus on tsunami risk assessment for the Philippines. Volcano data includes AI-powered insights for citizen-friendly guidance.
             </p>
           </div>
           

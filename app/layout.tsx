@@ -6,13 +6,13 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "PH Hazard Map - Real-time Hazard Monitoring",
+  title: "PHLindol - Real-time Hazard Monitoring",
   description: "All hazards. One map. Real-time awareness for safer communities.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "PH Hazard Map"
+    title: "PHLindol"
   }
 }
 

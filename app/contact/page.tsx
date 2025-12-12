@@ -164,8 +164,8 @@ export default function Contact() {
                     <Mail className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                     <div>
                       <h3 className="font-semibold text-slate-900 mb-1">Email</h3>
-                      <a href="mailto:contact@phhazardmap.com" className="text-blue-600 hover:text-blue-700">
-                        contact@phhazardmap.com
+                      <a href="mailto:contact@phlindol.com" className="text-blue-600 hover:text-blue-700">
+                        contact@phlindol.com
                       </a>
                     </div>
                   </div>

@@ -10,7 +10,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Mountain className="h-5 w-5 text-primary" />
-            <span>© {currentYear} PH Hazard Map</span>
+            <span>© {currentYear} PHLindol</span>
           </div>
 
           <nav className="flex flex-wrap items-center justify-center gap-6 text-sm">

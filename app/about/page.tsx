@@ -14,7 +14,7 @@ export default function About() {
         </Link>
 
         <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">About PH Hazard Map</h1>
+          <h1 className="text-4xl font-bold text-slate-900 mb-4">About PHLindol</h1>
           <p className="text-xl text-slate-600 mb-8">
             All hazards. One map. Real-time awareness for safer communities.
           </p>
@@ -23,7 +23,7 @@ export default function About() {
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 mb-3">Our Mission</h2>
               <p>
-                PH Hazard Map is dedicated to making critical hazard information accessible to every Filipino. We believe that real-time awareness saves lives, and everyone deserves access to accurate, up-to-date information about natural hazards affecting their communities.
+                PHLindol is dedicated to making critical hazard information accessible to every Filipino. We believe that real-time awareness saves lives, and everyone deserves access to accurate, up-to-date information about natural hazards affecting their communities.
               </p>
             </section>
 
@@ -85,7 +85,7 @@ export default function About() {
                     The Philippines is one of the most disaster-prone countries in the world. We face earthquakes, volcanic eruptions, and an average of 20 typhoons each year. Despite this, critical hazard information is often scattered across multiple sources, making it difficult for communities to stay informed.
                   </p>
                   <p>
-                    PH Hazard Map was created to solve this problem by bringing all hazard data into one accessible platform. Our goal is to empower Filipinos with the information they need to protect themselves and their loved ones.
+                    PHLindol was created to solve this problem by bringing all hazard data into one accessible platform. Our goal is to empower Filipinos with the information they need to protect themselves and their loved ones.
                   </p>
                 </div>
               </div>
@@ -94,7 +94,7 @@ export default function About() {
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 mb-3">Technology</h2>
               <p className="mb-3">
-                PH Hazard Map is built with modern web technologies to deliver a fast, reliable, and user-friendly experience:
+                PHLindol is built with modern web technologies to deliver a fast, reliable, and user-friendly experience:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">
                 <li>Real-time data processing and visualization</li>
@@ -110,7 +110,7 @@ export default function About() {
                 <Users className="w-8 h-8 text-blue-600 flex-shrink-0 mt-1" />
                 <div>
                   <p>
-                    We believe that informed communities are safer communities. By making hazard data accessible to everyone, we hope to contribute to disaster preparedness and resilience across the Philippines. Whether you&apos;re a concerned citizen, emergency responder, researcher, or local government official, PH Hazard Map is here to serve you.
+                    We believe that informed communities are safer communities. By making hazard data accessible to everyone, we hope to contribute to disaster preparedness and resilience across the Philippines. Whether you&apos;re a concerned citizen, emergency responder, researcher, or local government official, PHLindol is here to serve you.
                   </p>
                 </div>
               </div>
@@ -119,7 +119,7 @@ export default function About() {
             <section>
               <h2 className="text-2xl font-semibold text-slate-900 mb-3">Open Source</h2>
               <p>
-                PH Hazard Map is committed to transparency and community collaboration. We believe in the power of open source to create better tools for public safety. Our code is available for review, contribution, and learning.
+                PHLindol is committed to transparency and community collaboration. We believe in the power of open source to create better tools for public safety. Our code is available for review, contribution, and learning.
               </p>
             </section>
 
@@ -135,7 +135,7 @@ export default function About() {
 
             <section className="pt-6 border-t border-slate-200">
               <p className="text-sm text-slate-600">
-                <strong>Disclaimer:</strong> PH Hazard Map is an independent project and is not officially affiliated with PHIVOLCS, PAGASA, or any government agency. Always refer to official sources for emergency decisions and evacuation orders.
+                <strong>Disclaimer:</strong> PHLindol is an independent project and is not officially affiliated with PHIVOLCS, PAGASA, or any government agency. Always refer to official sources for emergency decisions and evacuation orders.
               </p>
             </section>
           </div>
