@@ -22,6 +22,23 @@ export function Header() {
         </div>
         
         <div className="flex items-center gap-2">
+          <nav className="hidden md:flex items-center gap-1 mr-2">
+            <Link href="/about">
+              <Button variant="ghost" size="sm">
+                About
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button variant="ghost" size="sm">
+                Contact
+              </Button>
+            </Link>
+            <Link href="/privacy">
+              <Button variant="ghost" size="sm">
+                Privacy
+              </Button>
+            </Link>
+          </nav>
           <Link href="/dashboard">
             <Button
               variant="outline"

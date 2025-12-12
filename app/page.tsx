@@ -35,27 +35,27 @@ export default function Home() {
     <div className="flex flex-col h-screen">
       <Header />
       <div className="flex-1 relative">
-        <MapContainer 
+        <MapContainer
           filters={filters}
           selectedEvent={selectedEvent}
           onEventSelect={setSelectedEvent}
         />
-        <FilterPanel 
+        <FilterPanel
           filters={filters}
           onFilterChange={setFilters}
         />
-        
+
         {/* Desktop: Event details panel on right */}
         {selectedEvent && !isMobile && (
-          <EventDetailsPanel 
+          <EventDetailsPanel
             event={selectedEvent}
             onClose={() => setSelectedEvent(null)}
           />
         )}
-        
+
         {/* Mobile: Bottom sheet */}
         {isMobile && (
-          <MobileBottomSheet 
+          <MobileBottomSheet
             event={selectedEvent}
             onClose={() => setSelectedEvent(null)}
           />
@@ -63,7 +63,7 @@ export default function Home() {
 
         {/* Map Legend - Bottom Right */}
         <div className="absolute bottom-4 right-4 z-10">
-          <MapLegend 
+          <MapLegend
             isCollapsed={isLegendCollapsed}
             onToggle={() => setIsLegendCollapsed(!isLegendCollapsed)}
           />
