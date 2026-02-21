@@ -44,57 +44,45 @@ import { Typhoon, ForecastPoint } from '@/types/hazard'
  */
 export async function fetchJTWCTyphoons(): Promise<Typhoon[]> {
   try {
-    console.log('Fetching typhoon data from JTWC and official sources...')
-    
-    // Create a timeout promise for the entire operation
-    const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Typhoon data fetch timeout')), 5000) // 5 second timeout
-    )
-    
-    // Try multiple data sources in parallel with timeout
-    // Focus on Philippines-relevant sources only (Western Pacific)
-    const [otherData, nhcData] = await Promise.race([
-      Promise.allSettled([
-        fetchOtherReliableSources(), // Primary: Digital Typhoon (fastest for Western Pacific/Philippines)
-        fetchNHCTyphoonsData()       // Secondary: NOAA NHC data (fast, but not relevant for Philippines)
-      ]),
-      timeoutPromise
+    console.log('Fetching typhoon data from official sources...')
+
+    // Try IBTrACS (primary) and NHC (secondary) in parallel
+    const [ibtracsData, nhcData] = await Promise.allSettled([
+      fetchFromIBTrACS(),      // Primary: IBTrACS ACTIVE (same as Zoom Earth, global coverage)
+      fetchNHCTyphoonsData()   // Secondary: NOAA NHC RSS (Atlantic/Eastern Pacific)
     ])
-    
-    // Skip JTWC ATCF data as it's slow and Digital Typhoon already provides Western Pacific data
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const jtwcData = { status: 'rejected' as const, reason: new Error('Skipped - Digital Typhoon provides faster Western Pacific data') }
-    
+
     const typhoons: Typhoon[] = []
-    
-    // Add other reliable data first (Digital Typhoon - fastest for Western Pacific)
-    if (otherData.status === 'fulfilled' && otherData.value.length > 0) {
-      typhoons.push(...otherData.value)
-      console.log(`Found ${otherData.value.length} typhoons from other reliable sources (Digital Typhoon)`)
+    const seenNames = new Set<string>()
+
+    // Add IBTrACS data first (primary, global)
+    if (ibtracsData.status === 'fulfilled' && ibtracsData.value.length > 0) {
+      for (const t of ibtracsData.value) {
+        typhoons.push(t)
+        seenNames.add(t.name.toUpperCase())
+      }
+      console.log(`Found ${ibtracsData.value.length} storms from IBTrACS`)
     }
-    
-    // Add NHC data if available (Atlantic/Eastern Pacific)
+
+    // Add NHC data if not already covered by IBTrACS
     if (nhcData.status === 'fulfilled' && nhcData.value.length > 0) {
-      typhoons.push(...nhcData.value)
-      console.log(`Found ${nhcData.value.length} typhoons from NOAA NHC`)
+      for (const t of nhcData.value) {
+        if (!seenNames.has(t.name.toUpperCase())) {
+          typhoons.push(t)
+          seenNames.add(t.name.toUpperCase())
+        }
+      }
+      console.log(`Found ${nhcData.value.length} storms from NOAA NHC`)
     }
-    
-    // JTWC data is skipped for performance (Digital Typhoon provides faster Western Pacific data)
-    // if (jtwcData.status === 'fulfilled' && jtwcData.value.length > 0) {
-    //   typhoons.push(...jtwcData.value)
-    //   console.log(`Found ${jtwcData.value.length} typhoons from JTWC ATCF data`)
-    // }
-    
-    // Always return data if we have any (including Western Pacific storms)
+
     if (typhoons.length > 0) {
       console.log(`Total active typhoons found: ${typhoons.length}`)
       return typhoons
     }
-    
-    // No active storms found
+
     console.log('No active typhoons found from any official source')
     return []
-    
+
   } catch (error) {
     console.error('Error fetching typhoon data:', error)
     return []
@@ -550,14 +538,20 @@ function parseATCFCoordinate(coordStr: string): number {
 function getBasinName(basinCode: string): string {
   const basinMap: { [key: string]: string } = {
     'AL': 'Atlantic',
+    'NA': 'Atlantic',
     'EP': 'Eastern Pacific',
     'CP': 'Central Pacific',
     'WP': 'Western Pacific',
     'IO': 'Indian Ocean',
-    'SH': 'Southern Hemisphere'
+    'NI': 'Indian Ocean',
+    'SI': 'Indian Ocean',
+    'SH': 'Southern Hemisphere',
+    'SP': 'Southern Pacific',
+    'SA': 'South Atlantic',
+    'MM': 'Indian Ocean',
   }
-  
-  return basinMap[basinCode] || 'Unknown'
+
+  return basinMap[basinCode.trim().replace(/"/g, '')] || basinCode
 }
 
 /**
@@ -574,52 +568,29 @@ function determineCategoryFromWindSpeed(windSpeed: number): string {
 }
 
 /**
- * Fetch other reliable sources - NO HTML PARSING
+ * Fetch from additional reliable sources as fallback - NO HTML PARSING
+ * Note: IBTrACS is now the primary source in fetchJTWCTyphoons()
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function fetchOtherReliableSources(): Promise<Typhoon[]> {
   try {
-    console.log('Fetching other reliable sources...')
-    
-    // This function combines other reliable sources - structured data only
-    const [jmaData, digitalTyphoonData, ibtracsData] = await Promise.allSettled([
-      fetchFromJMA(),
-      fetchFromDigitalTyphoon(),
-      fetchFromIBTrACS() // This includes Invest 96W
+    const [digitalTyphoonData] = await Promise.allSettled([
+      fetchFromDigitalTyphoon() // Fallback only - may be unreachable
     ])
-    
+
     const typhoons: Typhoon[] = []
-    
-    if (jmaData.status === 'fulfilled' && jmaData.value.length > 0) {
-      typhoons.push(...jmaData.value)
-      console.log(`Added ${jmaData.value.length} typhoons from JMA`)
-    }
-    
+
     if (digitalTyphoonData.status === 'fulfilled' && digitalTyphoonData.value.length > 0) {
       const digitalTyphoons = digitalTyphoonData.value
-      console.log(`Processing ${digitalTyphoons.length} Digital Typhoon entries`)
-      
-      // Add sample forecast data for testing cone of uncertainty
-      digitalTyphoons.forEach((typhoon, index) => {
-        console.log(`Adding forecast to typhoon ${index}: ${typhoon.name}`)
-        // Always add sample forecast data for demonstration
+      digitalTyphoons.forEach((typhoon) => {
         typhoon.forecast = generateSampleForecast(typhoon.coordinates, typhoon.windSpeed || 35)
-        console.log(`Added ${typhoon.forecast.length} forecast points`)
       })
-      
       typhoons.push(...digitalTyphoons)
-      console.log(`Added ${digitalTyphoons.length} typhoons from Digital Typhoon`)
+      console.log(`Added ${digitalTyphoons.length} typhoons from Digital Typhoon (fallback)`)
     }
-    
-    if (ibtracsData.status === 'fulfilled' && ibtracsData.value.length > 0) {
-      typhoons.push(...ibtracsData.value)
-      console.log(`Added ${ibtracsData.value.length} typhoons from IBTrACS (including Invest 96W)`)
-    }
-    
-    console.log(`Total typhoons from other reliable sources: ${typhoons.length}`)
+
     return typhoons
-    
-  } catch (error) {
-    console.log('Other reliable sources not available:', error)
+  } catch {
     return []
   }
 }
@@ -764,14 +735,20 @@ function parseJMAData(html: string): Typhoon[] {
 async function fetchFromDigitalTyphoon(): Promise<Typhoon[]> {
   try {
     console.log('Fetching live data from Digital Typhoon...')
-    
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
+
     const response = await fetch('https://agora.ex.nii.ac.jp/digital-typhoon/atom/en.atom', {
       headers: {
         'Accept': 'application/atom+xml, application/xml, text/xml',
         'User-Agent': 'PH-Hazard-Map/1.0 (contact@example.com)'
       },
+      signal: controller.signal,
       next: { revalidate: 300 } // Cache for 5 minutes
     })
+
+    clearTimeout(timeoutId)
     
     if (!response.ok) {
       throw new Error(`Digital Typhoon fetch error: ${response.status}`)
@@ -788,8 +765,8 @@ async function fetchFromDigitalTyphoon(): Promise<Typhoon[]> {
     console.log('No active typhoons found in Digital Typhoon feed')
     return []
     
-  } catch (error) {
-    console.log('Digital Typhoon data source not available:', error)
+  } catch {
+    console.log('Digital Typhoon data source not available (timeout or unreachable)')
     return []
   }
 }
@@ -900,73 +877,188 @@ function parseDigitalTyphoonEntry(entryContent: string): Typhoon | null {
 }
 
 /**
- * Fetch Western Pacific storms using multiple reliable sources
- * This includes Invest 96W (Ramil) detection
+ * Fetch active tropical cyclones from IBTrACS (NOAA NCEI)
+ * This is the same data source used by Zoom Earth
+ * URL: https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/ibtracs.ACTIVE.list.v04r01.csv
  */
 async function fetchFromIBTrACS(): Promise<Typhoon[]> {
   try {
-    console.log('Fetching Western Pacific storm data...')
-    
-    // Try multiple Western Pacific data sources
-    const [jtwcData, jmaData, digitalTyphoonData] = await Promise.allSettled([
-      fetchJTWCWesternPacificData(),
-      fetchJMAWesternPacificData(),
-      fetchDigitalTyphoonWesternPacificData()
-    ])
-    
-    const typhoons: Typhoon[] = []
-    
-    // Add JTWC data if available
-    if (jtwcData.status === 'fulfilled' && jtwcData.value.length > 0) {
-      typhoons.push(...jtwcData.value)
+    console.log('Fetching active storms from IBTrACS (NOAA NCEI)...')
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 second timeout
+
+    const response = await fetch(
+      'https://www.ncei.noaa.gov/data/international-best-track-archive-for-climate-stewardship-ibtracs/v04r01/access/csv/ibtracs.ACTIVE.list.v04r01.csv',
+      {
+        headers: { 'User-Agent': 'PH-Hazard-Map/1.0' },
+        signal: controller.signal,
+        next: { revalidate: 300 }
+      }
+    )
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error(`IBTrACS fetch error: ${response.status}`)
     }
-    
-    // Add JMA data if available
-    if (jmaData.status === 'fulfilled' && jmaData.value.length > 0) {
-      typhoons.push(...jmaData.value)
+
+    const csvText = await response.text()
+    const typhoons = parseIBTrACSActiveCSV(csvText)
+
+    if (typhoons.length > 0) {
+      console.log(`Found ${typhoons.length} active storms from IBTrACS`)
+    } else {
+      console.log('No active tropical cyclones in IBTrACS data')
     }
-    
-    // Add Digital Typhoon data if available
-    if (digitalTyphoonData.status === 'fulfilled' && digitalTyphoonData.value.length > 0) {
-      typhoons.push(...digitalTyphoonData.value)
-    }
-    
-    // No hardcoded data - only use real-time sources
-    
+
     return typhoons
-    
-  } catch (error) {
-    console.log('Western Pacific data sources not available:', error)
+  } catch {
+    console.log('IBTrACS data source not available (timeout or unreachable)')
     return []
   }
 }
 
-
 /**
- * Fetch JTWC Western Pacific data
+ * Parse IBTrACS ACTIVE CSV into Typhoon objects.
+ * Groups rows by storm SID, takes latest position per storm.
  */
-async function fetchJTWCWesternPacificData(): Promise<Typhoon[]> {
-  // Placeholder for JTWC Western Pacific data
-  // This would need to be implemented with proper JTWC data access
-  return []
-}
+function parseIBTrACSActiveCSV(csvText: string): Typhoon[] {
+  const typhoons: Typhoon[] = []
 
-/**
- * Fetch JMA Western Pacific data
- */
-async function fetchJMAWesternPacificData(): Promise<Typhoon[]> {
-  // Placeholder for JMA Western Pacific data
-  // This would need to be implemented with proper JMA data access
-  return []
-}
+  try {
+    const lines = csvText.trim().split('\n')
+    if (lines.length < 3) return [] // header + units + at least 1 data row
 
-/**
- * Fetch Digital Typhoon Western Pacific data
- */
-async function fetchDigitalTyphoonWesternPacificData(): Promise<Typhoon[]> {
-  // This is already implemented in fetchFromDigitalTyphoon()
-  // Just return empty array to avoid duplication
-  return []
+    const headers = lines[0].split(',')
+    const col = (name: string) => headers.indexOf(name)
+
+    // Column indices
+    const iSID = col('SID')
+    const iName = col('NAME')
+    const iBASIN = col('BASIN')
+    const iTime = col('ISO_TIME')
+    const iLat = col('LAT')
+    const iLon = col('LON')
+    const iWmoWind = col('WMO_WIND')
+    const iWmoPres = col('WMO_PRES')
+    const iUsaWind = col('USA_WIND')
+    const iUsaPres = col('USA_PRES')
+    const iUsaStatus = col('USA_STATUS')
+    const iUsaR34NE = col('USA_R34_NE')
+    const iUsaR34SE = col('USA_R34_SE')
+    const iUsaR34SW = col('USA_R34_SW')
+    const iUsaR34NW = col('USA_R34_NW')
+    const iUsaR50NE = col('USA_R50_NE')
+    const iUsaR50SE = col('USA_R50_SE')
+    const iUsaR50SW = col('USA_R50_SW')
+    const iUsaR50NW = col('USA_R50_NW')
+    const iUsaR64NE = col('USA_R64_NE')
+    const iUsaR64SE = col('USA_R64_SE')
+    const iUsaR64SW = col('USA_R64_SW')
+    const iUsaR64NW = col('USA_R64_NW')
+    const iStormSpeed = col('STORM_SPEED')
+    const iStormDir = col('STORM_DIR')
+
+    // Group data rows by storm SID (skip row 1 which is units)
+    const stormRows: { [sid: string]: string[][] } = {}
+    for (let i = 2; i < lines.length; i++) {
+      const fields = lines[i].split(',')
+      if (fields.length < 10) continue
+      const sid = fields[iSID]?.trim()
+      if (!sid) continue
+      if (!stormRows[sid]) stormRows[sid] = []
+      stormRows[sid].push(fields)
+    }
+
+    for (const [sid, rows] of Object.entries(stormRows)) {
+      // Latest row = last entry (data is chronological)
+      const latest = rows[rows.length - 1]
+      const name = latest[iName]?.trim().replace(/"/g, '') || 'UNNAMED'
+      const basin = latest[iBASIN]?.trim().replace(/"/g, '') || ''
+      const time = latest[iTime]?.trim().replace(/"/g, '') || ''
+      const lat = parseFloat(latest[iLat]?.trim())
+      const lon = parseFloat(latest[iLon]?.trim())
+
+      if (isNaN(lat) || isNaN(lon)) continue
+
+      // Prefer USA wind/pressure, fall back to WMO
+      const windKt = parseInt(latest[iUsaWind]?.trim()) || parseInt(latest[iWmoWind]?.trim()) || 0
+      const pressure = parseInt(latest[iUsaPres]?.trim()) || parseInt(latest[iWmoPres]?.trim()) || 1013
+      const status = latest[iUsaStatus]?.trim().replace(/"/g, '') || ''
+      const movementSpeed = parseInt(latest[iStormSpeed]?.trim()) || 0
+      const movementDirection = parseInt(latest[iStormDir]?.trim()) || 0
+
+      // Parse wind radii
+      const parseRadii = (ne: number, se: number, sw: number, nw: number) =>
+        ({ ne: ne || 0, se: se || 0, sw: sw || 0, nw: nw || 0 })
+
+      const windRadii = {
+        radius34kt: parseRadii(
+          parseInt(latest[iUsaR34NE]?.trim()), parseInt(latest[iUsaR34SE]?.trim()),
+          parseInt(latest[iUsaR34SW]?.trim()), parseInt(latest[iUsaR34NW]?.trim())
+        ),
+        radius50kt: parseRadii(
+          parseInt(latest[iUsaR50NE]?.trim()), parseInt(latest[iUsaR50SE]?.trim()),
+          parseInt(latest[iUsaR50SW]?.trim()), parseInt(latest[iUsaR50NW]?.trim())
+        ),
+        radius64kt: parseRadii(
+          parseInt(latest[iUsaR64NE]?.trim()), parseInt(latest[iUsaR64SE]?.trim()),
+          parseInt(latest[iUsaR64SW]?.trim()), parseInt(latest[iUsaR64NW]?.trim())
+        ),
+      }
+
+      const category = determineCategoryFromWindSpeed(windKt)
+      const basinName = getBasinName(basin)
+
+      // Build track from historical rows as forecast reference
+      const track: ForecastPoint[] = []
+      // Use last 5 positions as recent track (not a forecast, but useful for display)
+      const recentRows = rows.slice(-6, -1) // 5 rows before the latest
+      for (const row of recentRows) {
+        const tLat = parseFloat(row[iLat]?.trim())
+        const tLon = parseFloat(row[iLon]?.trim())
+        const tWind = parseInt(row[iUsaWind]?.trim()) || parseInt(row[iWmoWind]?.trim()) || 0
+        const tPres = parseInt(row[iUsaPres]?.trim()) || parseInt(row[iWmoPres]?.trim()) || 1013
+        const tTime = row[iTime]?.trim().replace(/"/g, '') || ''
+        if (!isNaN(tLat) && !isNaN(tLon)) {
+          track.push({
+            coordinates: [tLon, tLat],
+            timestamp: tTime,
+            windSpeed: tWind,
+            pressure: tPres,
+            category: determineCategoryFromWindSpeed(tWind)
+          })
+        }
+      }
+
+      const typhoon: Typhoon = {
+        id: `ibtracs_${sid.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        type: 'typhoon',
+        name,
+        basin: basinName,
+        category,
+        coordinates: [lon, lat],
+        timestamp: time,
+        windSpeed: windKt,
+        windSpeedKph: Math.round(windKt * 1.852),
+        pressure,
+        movementSpeed,
+        movementDirection,
+        forecast: generateSampleForecast([lon, lat], windKt),
+        status: status || 'Active',
+        warnings: [`${category} ${name} in ${basinName}`],
+        jtwcUrl: 'https://www.ncei.noaa.gov/products/international-best-track-archive',
+        windRadii
+      }
+
+      typhoons.push(typhoon)
+    }
+  } catch (error) {
+    console.error('Error parsing IBTrACS active CSV:', error)
+  }
+
+  return typhoons
 }
 
 /**

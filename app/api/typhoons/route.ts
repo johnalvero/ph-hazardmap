@@ -32,12 +32,8 @@ export async function GET(request: Request) {
         updateFrequency: '5 minutes (real-time)',
         mode: 'live',
         dataSources: [
-          'JTWC ATCF Data (Primary - Official)',
-          'IBTrACS (Same as Zoom Earth)',
-          'NOAA National Hurricane Center (Official)',
-          'Japan Meteorological Agency (Official)',
-          'Digital Typhoon (Japan) - Atom Feed',
-          'NOAA Weather Alerts API'
+          'IBTrACS Active Storms (Primary - NOAA NCEI, same as Zoom Earth)',
+          'NOAA National Hurricane Center (Secondary - Atlantic/Eastern Pacific)',
         ],
         note: typhoons.length === 0 ? 'No active tropical cyclones at this time' : 'Showing active tropical cyclones only'
       }
